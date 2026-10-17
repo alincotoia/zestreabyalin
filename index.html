@@ -257,9 +257,10 @@ body.busy .panel,body.busy #sheet{opacity:.65;pointer-events:none}
   function init(){
     if(ready)return ready;
     ready=(async()=>{
-      if(!cfg||!cfg.apiKey||!window.firebase)return null;
-      firebase.initializeApp(cfg);
-      try{await firebase.auth().signInAnonymously();}catch(e){console.error(e);return null;}
+      if(!cfg||!cfg.apiKey||cfg.apiKey==="PUNE_AICI"){window.ZESTREA_ERR="config-lipsa";return null;}
+      if(!window.firebase||!firebase.firestore||!firebase.auth){window.ZESTREA_ERR="firebase-sdk-nu-s-a-incarcat";return null;}
+      try{firebase.initializeApp(cfg);}catch(e){}
+      try{await firebase.auth().signInAnonymously();}catch(e){console.error(e);window.ZESTREA_ERR=(e&&e.code)||String(e&&e.message||e);return null;}
       const fs=firebase.firestore();
       try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
       return fs;
@@ -1007,7 +1008,7 @@ const isHost=()=>S&&S.host===ME;
 function render(){
   const app=$("#app");
   if(view==="loading"){app.innerHTML=`<div class="center"><div class="spin"></div><p>Se deschide domeniul…</p></div>`;return;}
-  if(view==="nodb"){app.innerHTML=`<section class="card pad"><h2>Nu mă pot conecta</h2><p>Zestrea păstrează mutările tuturor jucătorilor într-o bază de date comună și are nevoie de internet. Verifică conexiunea și redeschide aplicația.</p><button class="btn primary" onclick="location.reload()">Încearcă din nou</button></section>`;return;}
+  if(view==="nodb"){app.innerHTML=`<section class="card pad"><h2>Nu mă pot conecta</h2><p>Zestrea păstrează mutările tuturor jucătorilor într-o bază de date comună și are nevoie de internet. Verifică conexiunea și redeschide aplicația.</p><p class="small muted">Cod eroare: ${esc(window.ZESTREA_ERR||"necunoscut")}</p><button class="btn primary" onclick="location.reload()">Încearcă din nou</button></section>`;return;}
   if(view==="lobby"){renderLobby();renderChat();return;}
   if(view==="game"&&S){S.status==="lobby"?renderRoom():renderGame();if(SH)renderSheet();}
   renderChat();

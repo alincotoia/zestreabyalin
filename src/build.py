@@ -19,7 +19,7 @@ ui = R(ui, 'else if(e.code==="invalid_argument")toast("Nu ai drept de scriere ai
 ui = R(ui, 'toast(e.code==="invalid_argument"?"Nu ai drept de scriere aici. Cere-i gazdei acces de Editor la pagină.":"Jocul nu s-a putut crea. Mai încearcă.");',
           f'toast(e.code==="denied"?"{DENIED}":"Jocul nu s-a putut crea. Verifică internetul și mai încearcă.");')
 ui = R(ui, '<h2>Jocul are nevoie de conexiune</h2><p>Zestrea păstrează mutările tuturor jucătorilor într-o bază de date comună. Deschide pagina din aplicația Claude, autentificat în contul tău, ca să poți juca.</p>',
-          '<h2>Nu mă pot conecta</h2><p>Zestrea păstrează mutările tuturor jucătorilor într-o bază de date comună și are nevoie de internet. Verifică conexiunea și redeschide aplicația.</p><button class="btn primary" onclick="location.reload()">Încearcă din nou</button>')
+          '<h2>Nu mă pot conecta</h2><p>Zestrea păstrează mutările tuturor jucătorilor într-o bază de date comună și are nevoie de internet. Verifică conexiunea și redeschide aplicația.</p><p class="small muted">Cod eroare: ${esc(window.ZESTREA_ERR||"necunoscut")}</p><button class="btn primary" onclick="location.reload()">Încearcă din nou</button>')
 
 FB = '10.12.2'
 page = f'''<!doctype html>

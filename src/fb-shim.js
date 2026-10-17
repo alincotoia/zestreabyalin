@@ -5,9 +5,10 @@
   function init(){
     if(ready)return ready;
     ready=(async()=>{
-      if(!cfg||!cfg.apiKey||!window.firebase)return null;
-      firebase.initializeApp(cfg);
-      try{await firebase.auth().signInAnonymously();}catch(e){console.error(e);return null;}
+      if(!cfg||!cfg.apiKey||cfg.apiKey==="PUNE_AICI"){window.ZESTREA_ERR="config-lipsa";return null;}
+      if(!window.firebase||!firebase.firestore||!firebase.auth){window.ZESTREA_ERR="firebase-sdk-nu-s-a-incarcat";return null;}
+      try{firebase.initializeApp(cfg);}catch(e){}
+      try{await firebase.auth().signInAnonymously();}catch(e){console.error(e);window.ZESTREA_ERR=(e&&e.code)||String(e&&e.message||e);return null;}
       const fs=firebase.firestore();
       try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
       return fs;
