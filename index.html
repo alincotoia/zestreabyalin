@@ -1,0 +1,1353 @@
+<!doctype html>
+<html lang="ro"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#22131f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Zestrea">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif;-webkit-text-size-adjust:100%;overscroll-behavior-y:none}img{max-width:100%}*{box-sizing:border-box}</style>
+</head><body>
+<title>Zestrea</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: one narrow column, a hand-woven band (ii) at the top of every card, the turn's card as the page's centerpiece */
+:root{
+  --ground:#22131f; --surface:#301c2c; --raise:#3d2538; --line:rgba(244,231,214,.13);
+  --ink:#f4e7d6; --muted:#bfa7b3; --madder:#e3584a; --verdigris:#56b6a6; --ochre:#e7ad44; --indigo:#2c4d6b;
+  --display:"Yeseva One",Georgia,"Times New Roman",serif;
+  --body:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  --band:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='10' viewBox='0 0 36 10'%3E%3Crect width='36' height='10' fill='%2356b6a6'/%3E%3Cpath d='M0 5 L5 0 L10 5 L5 10Z' fill='%23e3584a'/%3E%3Cpath d='M12 5 L18 0 L24 5 L18 10Z' fill='%23f4e7d6'/%3E%3Cpath d='M15 5 L18 2 L21 5 L18 8Z' fill='%2322131f'/%3E%3Cpath d='M26 5 L31 0 L36 5 L31 10Z' fill='%23e7ad44'/%3E%3C/svg%3E");
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html{background:var(--ground)}
+body{background:var(--ground);color:var(--ink);font:500 16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
+#app{max-width:600px;margin:0 auto;padding-block:8px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-size:1.55rem;line-height:1.15}
+h3{font-size:1.15rem}
+p{margin:0}
+button{font:inherit;color:inherit}
+.muted{color:var(--muted)} .small{font-size:.86rem}
+.eyebrow{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ochre);font-weight:700}
+.card{background:var(--surface);border-radius:14px;position:relative;overflow:hidden}
+.card.pad{padding:18px 16px 16px}
+.card.pad::before,.times .band,.fate .band{content:"";position:absolute;inset:0 0 auto;height:6px;background:var(--band) repeat-x;background-size:auto 6px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;align-items:center} .wrap{flex-wrap:wrap}
+.grid1,.grid2,.grid3{display:grid;gap:8px} .grid2{grid-template-columns:1fr 1fr} .grid3{grid-template-columns:repeat(3,1fr)}
+.sect{font-size:1rem;color:var(--muted);margin-top:6px}
+.empty{color:var(--muted);text-align:center;padding:12px}
+.center{min-height:60vh;display:grid;place-items:center;align-content:center;gap:12px;color:var(--muted)}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--raise);border-top-color:var(--madder);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(1turn)}}
+
+/* hero */
+.hero{padding:28px 0 6px;display:flex;flex-direction:column;gap:8px}
+.word{font-family:var(--display);font-size:clamp(3.2rem,15vw,4.6rem);line-height:.95;color:var(--madder);text-shadow:3px 3px 0 var(--indigo)}
+.word.sm{font-size:1.45rem;text-shadow:2px 2px 0 var(--indigo)}
+.lead{color:var(--muted);max-width:34em}
+
+/* controls */
+.btn{appearance:none;border:1.5px solid var(--line);background:var(--raise);border-radius:10px;padding:11px 14px;min-height:46px;font-weight:700;cursor:pointer;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:transform .08s,background .15s}
+.btn:active{transform:translateY(1px)}
+.btn small{font-weight:500;color:var(--muted)}
+.btn.primary{background:var(--madder);border-color:var(--madder);color:#fff}
+.btn.primary small{color:rgba(255,255,255,.8)}
+.btn.ochre{background:var(--ochre);border-color:var(--ochre);color:#2a1610;width:100%}
+.btn.ghost{background:transparent}
+.btn.small{min-height:38px;padding:7px 12px;font-size:.9rem}
+.btn.sel{border-color:var(--ochre);box-shadow:inset 0 0 0 1px var(--ochre)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.pchip:focus-visible,summary:focus-visible,.seg button:focus-visible,.fate:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+input#nm{font:inherit;background:var(--ground);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:12px;min-height:46px;width:100%;box-sizing:border-box}
+input#nm:focus{outline:2px solid var(--ochre);border-color:transparent}
+.lbl{font-weight:700;font-size:.92rem;margin-top:4px}
+.seg{display:inline-flex;background:var(--ground);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--raise);color:var(--ink)}
+.seg.wide{display:flex}.seg.wide button{flex:1}
+.check{display:flex;gap:8px;align-items:center;font-weight:600}
+.tag{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;background:var(--raise);color:var(--muted);margin-left:4px;vertical-align:middle}
+.tag.neg{background:rgba(227,88,74,.18);color:#f19a8f}.tag.pos{background:rgba(86,182,166,.18);color:#8fd6c9}
+
+/* lobby */
+.game-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px}
+.game-row>div{min-width:0}
+.code{font-family:var(--display);letter-spacing:.12em;color:var(--ochre)}
+.seats{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.seats li{display:flex;align-items:center;gap:10px;background:var(--ground);border-radius:10px;padding:10px 12px;font-weight:700}
+.seatn{width:26px;height:26px;border-radius:50%;background:var(--indigo);display:grid;place-items:center;font-size:.85rem}
+.waiting{color:var(--muted);font-style:italic}
+
+/* top bar & phases */
+.top{display:flex;align-items:center;gap:10px;padding-top:6px}
+.top .home{border:0;background:var(--surface);width:38px;height:38px;border-radius:10px;font-size:1.5rem;line-height:1;cursor:pointer}
+.top .code{margin-left:auto}
+.turn{font-weight:800;font-variant-numeric:tabular-nums}.turn small{color:var(--muted);font-weight:500}
+.phases{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.phases span{background:var(--surface);border-radius:8px;padding:6px 2px;text-align:center;font-size:.68rem;color:var(--muted);display:flex;flex-direction:column;line-height:1.15}
+.phases b{font-family:var(--display);font-weight:400;font-size:.95rem}
+.phases .done{opacity:.55}
+.phases .on{background:var(--madder);color:#fff}
+
+/* times card: the centerpiece */
+.times{position:relative;border-radius:16px;padding:22px 18px 18px;background:radial-gradient(120% 90% at 100% 0%,rgba(44,77,107,.7),transparent 60%),var(--raise);display:flex;flex-direction:column;gap:8px;overflow:hidden;border:1px solid var(--line)}
+.times.good{background:radial-gradient(120% 90% at 100% 0%,rgba(231,173,68,.32),transparent 60%),var(--raise)}
+.times h2{font-size:1.9rem}
+.seer{background:rgba(86,182,166,.14);color:#a9e3d8;border-radius:8px;padding:8px 10px}
+
+/* panel */
+.panel{display:flex;flex-direction:column;gap:12px}
+.readyrow{display:flex;flex-wrap:wrap;gap:6px;border-top:1px dashed var(--line);padding-top:10px}
+.rd{font-size:.8rem;padding:3px 8px;border-radius:20px;background:var(--ground);color:var(--muted)}
+.rd.ok{background:rgba(86,182,166,.2);color:#9fdccf}
+.rd.ok::before{content:"✓ "}
+.unit{display:flex;align-items:center;gap:6px;background:var(--ground);border-radius:10px;padding:8px 10px;min-height:52px}
+.unit .un{flex:1;font-weight:700;min-width:0}
+.die{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:9px;background:var(--ink);color:var(--ground);font-family:var(--display);font-size:1.3rem;flex:none}
+.die.sm{width:24px;height:24px;font-size:.9rem;border-radius:6px}
+.pick{display:flex;gap:4px;flex-wrap:wrap}
+.pick button{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--ochre);background:transparent;font-weight:800;cursor:pointer}
+.bidline{font-size:1.05rem}
+.prop{border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.prop.in{background:rgba(231,173,68,.14);border:1.5px solid var(--ochre)}
+.prop.out{background:var(--ground)}
+.acts .btn:first-child{grid-column:1/-1}
+.feedp{border-left:3px solid var(--ochre);padding-left:8px}
+
+/* fate cards */
+.hand{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory}
+.fate{position:relative;flex:none;width:200px;min-height:170px;scroll-snap-align:start;text-align:left;border:0;cursor:pointer;background:linear-gradient(180deg,#3a1f35,#2a1627);border-radius:12px;padding:18px 12px 12px;display:flex;flex-direction:column;gap:6px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.fate b{font-family:var(--display);font-weight:400;font-size:1.08rem;line-height:1.15}
+.fate i{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--verdigris)}
+.fate p{font-size:.84rem;color:var(--muted)}
+.fate.big{width:auto;min-height:0;cursor:default}
+
+/* domain */
+.domhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.stats span{background:var(--ground);border-radius:10px;padding:8px 4px;text-align:center;font-size:.74rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1px}
+.stats b{font-size:1.35rem;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1}
+.ico{width:20px;height:16px;flex:none}
+.c1{fill:var(--madder)}.c2{fill:var(--verdigris)}.c3{fill:var(--ochre)}.l1{fill:var(--verdigris)}.l2{fill:var(--ochre)}
+.peas{display:flex;flex-direction:column;gap:6px}
+.couple,.single{display:flex;flex-wrap:wrap;gap:4px;align-items:stretch;background:var(--ground);border-radius:10px;padding:6px;position:relative}
+.couple{border-left:4px solid var(--madder)}
+.couple.land,.single.land{background:linear-gradient(90deg,rgba(86,182,166,.16),transparent 70%),var(--ground)}
+.onland{position:absolute;right:8px;top:6px;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#8fd6c9}
+.pc,.pchip{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:8px;min-width:0;flex:1 1 140px}
+.pc span,.pchip span{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.pc i,.pchip i{font-style:normal;font-size:.72rem;color:var(--ochre)}
+.pc .tag,.pchip .tag{margin:2px 0 0;align-self:flex-start}
+.fig{width:22px;height:33px;flex:none}
+.fig .h{fill:#f0d3b8}
+.fig.f .k{fill:var(--madder)}.fig.f .b{fill:var(--madder)}.fig.f .st{stroke:var(--ink);stroke-width:1.6}.fig.f .st2{stroke:var(--ochre);stroke-width:1.6}
+.fig.m .k{fill:var(--ground)}.fig.m .b{fill:var(--verdigris)}.fig.m .st{stroke:var(--madder);stroke-width:2}.fig.m .lg{stroke:var(--ink);stroke-width:2.4}
+.fig.nb{transform:rotate(90deg) scale(.8)}
+.pchip{border:1.5px solid var(--line);background:var(--ground);cursor:pointer;text-align:left;flex:0 1 auto}
+.pchip.sel{border-color:var(--ochre);background:rgba(231,173,68,.14)}
+.pchip:disabled{cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.grp{font-size:.8rem;color:var(--muted);font-weight:700;margin-top:4px}
+
+/* others */
+.other summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.other summary::-webkit-details-marker{display:none}
+.oname{font-weight:800}
+.ostats{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.other .peas{padding:0 12px 12px}
+details.card.pad>summary{cursor:pointer;font-weight:800}
+.log{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:.88rem;color:var(--muted)}
+.log li:first-child{color:var(--ink)}
+.rl{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:.92rem}
+.host{display:flex;justify-content:center}
+
+/* end */
+.end{display:flex;flex-direction:column;gap:12px}
+.res{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.res th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:6px 4px}
+.res td{padding:8px 4px;border-top:1px solid var(--line)}
+.res tr.me td{color:var(--ochre)}
+
+/* sheet */
+#scrim{position:fixed;inset:0;background:rgba(10,4,9,.6);z-index:20}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow-y:auto;z-index:21;background:var(--surface);border-radius:18px 18px 0 0;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px;max-width:600px;margin:0 auto;box-sizing:border-box}
+#sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);align-self:center}
+#sheet .x{position:absolute;right:10px;top:8px;border:0;background:var(--raise);width:34px;height:34px;border-radius:50%;font-size:1.2rem;cursor:pointer}
+.odds{display:flex;align-items:center;gap:10px;background:var(--ground);border-radius:10px;padding:10px;font-weight:700}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--ground);padding:11px 16px;border-radius:12px;font-weight:700;z-index:30;max-width:min(92vw,480px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+body.busy .panel,body.busy #sheet{opacity:.65;pointer-events:none}
+
+/* timers, order, popups, chat */
+.tbar{position:relative;background:var(--surface);border-radius:10px;height:34px;overflow:hidden;display:flex;align-items:center;gap:8px;padding:0 12px}
+.tbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,rgba(86,182,166,.45),rgba(86,182,166,.25));transition:width .25s linear}
+.tbar.low i{background:linear-gradient(90deg,rgba(227,88,74,.6),rgba(227,88,74,.35))}
+.tbar span,.tbar em{position:relative;font-weight:800;font-variant-numeric:tabular-nums}
+.tbar em{font-style:normal;font-weight:600;font-size:.85rem;color:var(--muted);margin-left:auto;order:-1}
+.tbar span{margin-left:auto}
+.tbar em{margin-left:0;margin-right:auto}
+.tmrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tmrow>span{font-size:.9rem;color:var(--muted)}
+.tmrow .seg button{padding:7px 9px;font-size:.85rem}
+.order{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.order span{font-size:.8rem;padding:3px 8px;border-radius:20px;background:var(--ground);color:var(--muted)}
+.order .done{text-decoration:line-through;opacity:.6}
+.order .cur{background:var(--ochre);color:#2a1610;font-weight:800}
+.order .arr{background:none;padding:0 1px}
+.turnme{background:rgba(231,173,68,.16);border-left:3px solid var(--ochre);padding:8px 10px;border-radius:6px;font-weight:800}
+.couple{border:1.5px solid rgba(227,88,74,.75);border-left-width:5px;padding-top:20px}
+.couple::before{content:"Cuplu";position:absolute;left:10px;top:4px;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#f19a8f}
+.single{border:1.5px dashed var(--line)}
+.mute{border:0;background:var(--surface);width:38px;height:38px;border-radius:10px;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}.mute .sp{fill:var(--ink)}.mute .sw{stroke:var(--ink);stroke-width:2;fill:none;stroke-linecap:round}
+.mute.off .sp{fill:var(--muted)}.mute.off .sw{stroke:var(--madder)}
+#pop{position:fixed;inset:0;z-index:40;background:rgba(10,4,9,.7);display:grid;place-items:center;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
+.popc{background:var(--surface);border-radius:18px;padding:22px 18px 18px;width:min(100%,420px);display:flex;flex-direction:column;gap:12px;text-align:center;position:relative;overflow:hidden;animation:popin .25s ease-out}
+.popc::before{content:"";position:absolute;inset:0 0 auto;height:6px;background:var(--band) repeat-x;background-size:auto 6px}
+.popc .grid1{text-align:left}
+@keyframes popin{from{transform:scale(.92);opacity:0}}
+.bigdie{width:96px;height:96px;margin:0 auto;display:grid;place-items:center;font-size:3rem;color:var(--verdigris);animation:roll .6s ease-out}
+.bigdie svg{width:96px;height:96px}.df{fill:var(--ink)}.dp{fill:var(--ground)}
+.wed.no .df{fill:#f1c9c2}
+@keyframes roll{from{transform:rotate(-200deg) scale(.4)}}
+.need{font-size:1.05rem}.verdict{font-family:var(--display);font-size:1.5rem}
+.wed.ok .verdict{color:var(--verdigris)}.wed.no .verdict{color:var(--madder)}
+#chatbtn{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:15;width:54px;height:54px;border-radius:50%;border:0;background:var(--indigo);box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer;display:grid;place-items:center}
+#chatbtn svg{width:26px;height:26px}#chatbtn .cb{fill:var(--ink)}
+#chatbtn b{position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;border-radius:10px;background:var(--madder);color:#fff;font-size:.75rem;display:grid;place-items:center;padding:0 5px}
+#chat{position:fixed;left:0;right:0;bottom:0;z-index:25;max-width:600px;margin:0 auto;height:min(70vh,520px);background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-sizing:border-box;gap:8px}
+#chat header{display:flex;align-items:center;justify-content:space-between}
+#chat header button{border:0;background:var(--raise);width:34px;height:34px;border-radius:50%;font-size:1.2rem;cursor:pointer}
+#chatlist{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;min-height:0}
+#chatlist li{background:var(--ground);border-radius:12px;padding:7px 10px;max-width:85%;align-self:flex-start;display:flex;flex-direction:column;overflow-wrap:anywhere}
+#chatlist li.me{align-self:flex-end;background:rgba(86,182,166,.2)}
+#chatlist li b{font-size:.75rem;color:var(--ochre)}
+#chatlist li.sys{align-self:center;background:none;color:var(--muted)}
+#chatform{display:flex;gap:8px}
+#chatin{flex:1;min-width:0;font:inherit;background:var(--ground);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
+#chatin:focus{outline:2px solid var(--ochre);border-color:transparent}
+#toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+@media (max-width:380px){.grid3{grid-template-columns:1fr 1fr}.stats b{font-size:1.15rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<div id="app"></div>
+<div id="scrim" hidden></div>
+<div id="sheet" hidden role="dialog" aria-modal="true"></div>
+<div id="toast" hidden role="status"></div>
+<div id="pop" hidden role="dialog" aria-modal="true"></div>
+<button id="chatbtn" data-a="chat" hidden aria-label="Chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="cb" d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg><b hidden></b></button>
+<section id="chat" hidden aria-label="Chat"><header><h3>Chat la masă</h3><button data-a="chat" aria-label="Închide chatul">×</button></header><ul id="chatlist" data-first="1"></ul><form id="chatform"><input id="chatin" maxlength="300" placeholder="Scrie un mesaj…" autocomplete="off"><button class="btn primary" type="submit">Trimite</button></form></section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script>/* Firebase adapter: exposes the same small db API the game uses (doc/collection/onSnapshot/acquire) */
+(function(){
+  const cfg=window.ZESTREA_FIREBASE;
+  let ready=null;
+  function init(){
+    if(ready)return ready;
+    ready=(async()=>{
+      if(!cfg||!cfg.apiKey||!window.firebase)return null;
+      firebase.initializeApp(cfg);
+      try{await firebase.auth().signInAnonymously();}catch(e){console.error(e);return null;}
+      const fs=firebase.firestore();
+      try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
+      return fs;
+    })();
+    return ready;
+  }
+  // Firestore can't store nested arrays, so game state travels as a JSON string next to a few summary fields.
+  const isGame=p=>/^games\/[^/]+$/.test(p);
+  function enc(path,d){
+    if(!isGame(path))return d;
+    return {code:d.code,status:d.status,created:d.created,turn:d.turn||0,total:d.total||0,
+      players:(d.players||[]).map(p=>({id:p.id,name:p.name})),s:JSON.stringify(d)};
+  }
+  function dec(d){if(d&&typeof d.s==="string"){try{return JSON.parse(d.s);}catch(e){}}return d;}
+  const err=e=>{const x=new Error(e&&e.message||"eroare");x.code=e&&e.code==="permission-denied"?"denied":"unavailable";return x;};
+  function wrapSnap(sn){return{id:sn.id,exists:sn.exists,data:()=>sn.exists?dec(sn.data()):undefined};}
+  function makeDB(fs){
+    function doc(path){
+      const ref=fs.doc(path);
+      return{path,id:ref.id,
+        async get(){try{return wrapSnap(await ref.get());}catch(e){throw err(e);}},
+        async set(d){try{await ref.set(enc(path,d));}catch(e){throw err(e);}},
+        async delete(){await ref.delete();},
+        async acquire({holder,ttlMs}){
+          ttlMs=ttlMs||30000;
+          try{return await fs.runTransaction(async tx=>{
+            const s=await tx.get(ref);const now=Date.now();const d=s.exists?s.data():null;
+            if(d&&d.exp>now&&d.holder!==holder)return{acquired:false};
+            tx.set(ref,{holder,exp:now+ttlMs});return{acquired:true};
+          });}catch(e){return{acquired:false};}
+        },
+        onSnapshot(next,error){return ref.onSnapshot(sn=>next(wrapSnap(sn)),e=>error&&error(err(e)));},
+        collection(sub){return coll(path+"/"+sub);}
+      };
+    }
+    function coll(path,q){
+      q=q||fs.collection(path);
+      const o={path,
+        where:(f,op,v)=>coll(path,q.where(f,op,v)),
+        orderBy:(f,d)=>coll(path,q.orderBy(f,d||"asc")),
+        limit:n=>coll(path,q.limit(n)),
+        doc:id=>doc(path+"/"+(id||fs.collection(path).doc().id)),
+        async add(d){const r=fs.collection(path).doc();await r.set(d);return doc(path+"/"+r.id);},
+        async get(){const s=await q.get();return{docs:s.docs.map(wrapSnap),size:s.size,empty:s.empty};},
+        onSnapshot(next,error){return q.onSnapshot(s=>next({docs:s.docs.map(wrapSnap),size:s.size,empty:s.empty}),e=>error&&error(err(e)));}
+      };
+      return o;
+    }
+    return{doc,collection:p=>coll(p)};
+  }
+  window.claude={use:async name=>{
+    if(name!=="db")return null;
+    const fs=await init();return fs?makeDB(fs):null;
+  }};
+})();
+</script>
+<script>/* ===== Zestrea engine: pure functions over the shared state ===== */
+const NAMES_M=["Alimoș","Ciumpălău","Decebal","Bonbonel","Inocențiu","Helmut","Manole","Xavier","Gogu","Matache","Costică","Lică Sămădăul","Cucu","Bolțar","Ion","Aloisiu","Toader","Dumitru","Vasile","Belizarie","Aristică","Iancu","Alin","Alexandru","Nea’ Marin","Cosma","Ghiță","Petrache","Mitică","Fănică","Năstase","Pătru","Grigore","Ilie","Stan","Radu","Tudose","Haralambie","Pantelimon","Zaharia","Spiridon","Ilarie"];
+const NAMES_F=["Brunhilda","Aglaia","Zenobia","Eufrosina","Anuța","Bözsi","Corcodușa","Emöke","Florica","Danubia","Consuela","Miorița","Julieta","Maricica","Ileana","Cleopatra","Paula","Raluca","Simo’","Safta","Marioara","Lenuța","Ioana","Floarea","Veta","Saveta","Domnica","Catinca","Tinca","Smaranda","Zamfira","Ruxandra","Vica","Sofica","Profira","Paraschiva","Aurica","Viorica","Marghioala","Anica","Chiriachița","Lucreția"];
+
+const ROLLTAB={1:[1,1],2:[2,1],3:[2,1],4:[2,0],5:[2,0],6:[3,0]};
+
+const FATE={
+  haine:{t:"Haine necălcate",role:1,m:-1,d:"Rol. Un Fecior sau o Mândră își ia hainele necălcate și pe dos. −1 șansă de nuntă."},
+  moasa:{t:"Moașă",role:1,sex:"F",d:"Rol. O Mândră sau Nevastă devine moașă. Boierul ei primește +1 Zestre pentru fiecare nou-născut de pe domeniul lui."},
+  lautar:{t:"Lăutar",role:1,d:"Rol. Un țăran devine Lăutar. Poate cânta la orice nuntă (și poate fi angajat de alți boieri, preț negociabil): +1 șansă de nuntă."},
+  ponihoasa:{t:"Ponihoasă",role:1,sex:"F",m:2,d:"Rol. O Mândră își pierde vederea. +2 șanse de nuntă."},
+  vladic:{t:"Vlădicul Satului",role:1,sex:"M",d:"Rol. Un Fecior sau Bărbat devine Vlădic și nu se mai poate căsători. Boierul lui primește +1 Zestre pentru fiecare țăran care moare pe alt domeniu."},
+  clarv:{t:"Clarvăzătoare",role:1,sex:"F",d:"Rol. O Mândră sau Nevastă devine Clarvăzătoare. Boierul ei vede următoarea carte de Vremuri."},
+  urat:{t:"Urâtul satului",role:1,m:-2,d:"Rol. Un Fecior sau o Mândră suferă subit de hidoșenie. −2 șanse de nuntă."},
+  deochi:{t:"Deochi",role:1,m:-2,d:"Rol. Ptiu, ptiu! −2 șanse de nuntă."},
+  prost:{t:"Prostul satului",role:1,m:-1,d:"Rol. Crește la vârstă, dar rămâne cu mintea în urmă. −1 șansă de nuntă."},
+  mono:{t:"Familie monoparentală",role:1,single:1,d:"Rol. Un țăran singur produce ca un Cuplu, dar nu face copii, nu se mai poate căsători și nu contează la bonusul de +5."},
+  lac:{t:"Din lac în puț",d:"Cel mai sărac boier (cu cel puțin 1 Zestre) pierde 2 Zestre. La egalitate, pierd toți cei mai săraci."},
+  sfadit:{t:"S-o sfădit mama cu tata",d:"Un Cuplu, la alegere, de la orice boier, se desparte. Rămân la același boier ca țărani singuri. Ultimul Cuplu al unui boier nu se poate destrăma."},
+  capra:{t:"Să moară capra vecinului",d:"Boierii din stânga și din dreapta ta plătesc fiecare 4 Zestre la Stat."},
+  calcat:{t:"Ai călcat în dânsul",any:1,d:"Ai noroc! La următoarea ta aruncare de zar (producție sau nuntă) alegi tu rezultatul. Se poate juca în orice etapă."},
+  fura:{t:"Se fură mireasa",after:1,d:"Imediat după o nuntă reușită: mireasa se mărită cu unul dintre Feciorii tăi, în locul mirelui."},
+  coasa:{t:"La coasă pă arătură",d:"Un Fecior al tău lucrează beat pământul altui boier, care se simte obligat să plătească. Primești 3 Zestre de la un boier ales."},
+  luceafar:{t:"Luceafărul",d:"Un boier, la alegere, primește un copil din flori, adult din start."},
+  suflete:{t:"Suflete pereche",d:"Următoarea ta nuntă iese sigur: fără Zestre și fără zar."},
+  amsterdam:{t:"Nunți la Amsterdam",d:"Până la finalul turei, oricine poate face nunți între orice țărani, indiferent de sex. Cuplurile de același sex nu fac copii."},
+  tuica:{t:"Ziua de țuică",d:"Faci (și bei) țuică pe domeniul tău. +2 Zestre pentru fiecare Pământ."},
+  schimb:{t:"Schimb de mame",d:"Schimbă între ele oricare două Neveste sau Mândre din joc. Își păstrează rolurile."},
+  hora:{t:"Hora mare",d:"Până la finalul turei, prima încercare de nuntă a fiecărei perechi e gratis."},
+  bataie:{t:"Mănâncă bătaie",d:"Feciorii și Mândrele tale singure nu trebuie hrăniți tura asta. Cuplurile mănâncă normal."},
+  vinvremuri:{t:"Vin vremuri grele?",d:"Scoți ultima carte de Vremuri din teanc (jocul se scurtează cu o tură) sau adaugi la final una nefolosită (jocul se lungește cu o tură)."},
+  tir:{t:"Cu TIR-ul pă Italia",d:"+2 Zestre pentru fiecare Fecior singur al tău, inclusiv nou-născuții."},
+  descantec:{t:"Descântec",d:"Aranjezi următoarele 3 cărți de Vremuri în ce ordine vrei."},
+  piatra:{t:"Casă de piatră",after:1,own:1,d:"Imediat după o nuntă reușită la care ai participat: ceilalți boieri (în afară de celălalt nuntaș) îți dau câte 2 Zestre."},
+  murat:{t:"Afacere cu murături",d:"+2 Zestre pentru fiecare Mândră singură a ta, inclusiv nou-născutele."},
+  afara:{t:"Dă p-afară",d:"Un Fecior sau o Mândră singură de-a ta pleacă definitiv la alt boier."},
+  dulau:{t:"Pune dulăul pe el",d:"Elimină un Bărbat însurat de la oricare boier. Ultimul Cuplu al unui boier nu se poate destrăma."},
+  matrapaz:{t:"Matrapazlâc la hotar",d:"Cineva a mutat gardul în favoarea ta. Iei 1 Pământ de la alt boier (nu ultimul lui)."},
+  sexch:{t:"Schimbare de sex",d:"Un țăran (singur sau căsătorit) își schimbă sexul și primește un nume nou."},
+  birt:{t:"Bătaie la birt",d:"Băutura-i toate relele. Elimină un Bărbat însurat de la oricare boier. Ultimul Cuplu nu se poate destrăma."}
+};
+const FATE_DECK=["haine","moasa","lautar","lautar","lautar","ponihoasa","vladic","clarv","urat","deochi","prost","mono","lac","sfadit","capra","calcat","fura","coasa","luceafar","suflete","amsterdam","tuica","schimb","hora","bataie","vinvremuri","tir","descantec","piatra","murat","afara","dulau","matrapaz","sexch","birt"];
+
+const TIMES={
+  vbune:{t:"Vremuri Bune",g:1,d:"Toți boierii primesc o carte de Soartă."},
+  fonduri:{t:"Fonduri Europene",g:1,d:"Toți boierii primesc 2 Zestre."},
+  sanz:{t:"Sânziene",g:1,d:"Mândrele își visează ursitul. Tura asta, nunțile reușesc la 1, 2 sau 3."},
+  colinda:{t:"Cu colinda",i:1,d:"Fiecare boier alege un alt boier la care merge la colindat și primește de acolo 1 Zestre pentru fiecare țăran singur al său (sau 1 Zestre dacă nu are)."},
+  cerno:{t:"Umbra Cernobâlului",d:"Toate nașterile din tura asta sunt gemeni."},
+  comunism:{t:"Comunism",d:"Toată Zestrea și tot Pământul din sat se împart egal. Ce rămâne merge la Stat."},
+  zilele:{t:"Zilele satului",i:1,d:"Cel mai sărac boier câștigă 3 Zestre la păcănele. Oricine poate plăti la Stat câtă Zestre vrea ca țăranii să se dea în Linghișpir; ceilalți trebuie să plătească la fel de mult, să nu rămână mai prejos."},
+  foncirea:{t:"Foncirea",i:1,d:"Fiecare boier plătește 1 Zestre pentru fiecare Pământ. Poți cere împrumut altora. Cine nu plătește tot pierde jumătate din Pământ."},
+  potop:{t:"Potop",i:1,d:"Fiecare boier pierde, la alegere, un Fecior singur, o Mândră singură, un Cuplu sau un Pământ. Ultimul Cuplu nu se poate pierde."},
+  haiducii:{t:"Vin haiducii",d:"Haiducii fură toate Mândrele singure. Cine nu are Mândre singure pierde 1 Zestre pentru fiecare Pământ."},
+  batuti:{t:"Bătuți de soartă",d:"Toate cărțile de Soartă din mână se amestecă și se împart egal. Cine rămâne cu mai puține primește una din pachet. Minim o carte de boier."},
+  primar:{t:"Primarul satului",i:1,d:"Se votează primarul. Fiecare boier votează cu câte un vot pentru fiecare țăran. Primarul primește 1 Zestre la fiecare nuntă reușită din sat, până la finalul jocului."},
+  catanie:{t:"Cătănie",d:"Pentru fiecare Fecior singur se dă cu zarul. La 1, 2 sau 3 nu se mai întoarce din război."},
+  foc:{t:"Așe feri, de foc",d:"Incendiu! Cel mai bogat boier pierde jumătate din Zestre. La 1–4 pe zar focul trece la vecinii din stânga și dreapta (dacă au Zestre), care pierd 2 Zestre și dau și ei cu zarul. Focul atinge fiecare boier o singură dată."},
+  autostrada:{t:"Autostradă în ogradă",d:"Fiecare boier dă cu zarul. La 1, 2 sau 3 autostrada trece prin ograda lui și vinde la Stat jumătate din Pământ, cu 1 Zestre bucata."},
+  dragobete:{t:"Dragobete",d:"Toate Cuplurile fac un prunc."},
+  pasalac:{t:"Pașalâc",i:1,d:"Toți boierii plătesc peșcheș la Sultan jumătate din Zestre și dau o Nevastă la harem sau un Bărbat însurat la armată. Ultimul Cuplu nu se poate destrăma."}
+};
+const GOOD=["vbune","fonduri","sanz"];
+const HARD=["colinda","cerno","comunism","zilele","foncirea","potop","haiducii","batuti","primar","catanie","foc","autostrada","dragobete","pasalac"];
+const PHASES=[["times","Vremuri"],["prod","Producție"],["auct","Licitație"],["neg","Nunți"],["feed","Hrană"]];
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const d6=()=>1+Math.floor(Math.random()*6);
+function E(m){const e=new Error(m);e.user=1;return e;}
+
+/* --- queries --- */
+const pl=(s,id)=>s.players.find(p=>p.id===id);
+const peas=(s,o)=>Object.values(s.P).filter(p=>p.o===o);
+const coupleList=(s,o)=>peas(s,o).filter(p=>p.sp&&p.id<p.sp).map(p=>[p,s.P[p.sp]]);
+const singles=(s,o)=>peas(s,o).filter(p=>!p.sp);
+const hasRole=(p,r)=>p.r.includes(r);
+const isMono=p=>!p.sp&&hasRole(p,"mono");
+const canMarry=p=>!p.sp&&!p.nb&&!hasRole(p,"vladic")&&!hasRole(p,"mono");
+const lastCouple=(s,o)=>coupleList(s,o).length<=1;
+function units(s,o){
+  const u=coupleList(s,o).map(([a,b])=>({k:a.id,a,b,c:1}));
+  singles(s,o).filter(p=>isMono(p)&&!p.nb).forEach(p=>u.push({k:p.id,a:p,c:0}));
+  return u;
+}
+const productive=(s,o)=>units(s,o).slice(0,pl(s,o).land);
+function canChild(s,o){return singles(s,o).length<7&&s.pdeck.length>0;}
+function nbrs(s,id){
+  const n=s.players.length,i=s.players.findIndex(p=>p.id===id);
+  const L=s.players[(i+n-1)%n],R=s.players[(i+1)%n];
+  return [...new Set([L,R].filter(p=>p.id!==id))];
+}
+function richest(s){
+  const m=Math.max(...s.players.map(p=>p.z));
+  return shuffle(s.players.filter(p=>p.z===m))[0];
+}
+const pname=(s,id)=>(pl(s,id)||{}).name||"?";
+function log(s,m){s.log.push([Date.now(),m]);if(s.log.length>80)s.log.splice(0,s.log.length-80);}
+function fx(s,k,id){s.fxn=(s.fxn||0)+1;(s.fx=s.fx||[]).push([s.fxn,k,id||null]);if(s.fx.length>24)s.fx.shift();}
+function setDL(s,sec){s.dl=sec?Date.now()+sec*1000:null;s.dlLen=sec||0;}
+const negCur=s=>s.players[((s.negStart||0)+(s.negI||0))%s.players.length].id;
+
+/* --- mutations --- */
+function drawP(s,o,nb){
+  if(!s.pdeck.length)return null;
+  const [n,sx]=s.pdeck.shift();const id=++s.seq;
+  s.P[id]={id,n,s:sx,o,sp:null,nb:!!nb,r:[]};return s.P[id];
+}
+function drawFate(s,p){if(!s.fdeck.length)return null;const c=s.fdeck.shift();p.hand.push(c);return c;}
+function removeP(s,id,death){
+  const p=s.P[id];if(!p)return;
+  if(p.sp&&s.P[p.sp])s.P[p.sp].sp=null;
+  delete s.P[id];
+  if(death){fx(s,"death");
+    Object.values(s.P).filter(v=>hasRole(v,"vladic")&&v.o!==p.o).forEach(v=>{pl(s,v.o).z+=1;});
+  }
+}
+function birth(s,o,count){
+  const out=[];
+  for(let i=0;i<count;i++){
+    if(!canChild(s,o))break;
+    const c=drawP(s,o,true);if(!c)break;out.push(c);
+    if(peas(s,o).some(p=>hasRole(p,"moasa")))pl(s,o).z+=1;
+  }
+  return out;
+}
+
+/* --- setup --- */
+function newGame(code,host,hostName,hard,tm){
+  return {v:0,code,status:"lobby",host,created:Date.now(),hard:hard||5,tm:tm||{turn:30,wed:120,auct:20},dl:null,dlLen:0,fx:[],fxn:0,wroll:null,
+    players:[{id:host,name:hostName,z:0,land:3,hand:[],ready:false,fix:false,suf:false}],
+    P:{},seq:0,pdeck:[],fdeck:[],fdisc:[],tdeck:[],tunused:[],tcur:null,turn:0,total:0,phase:"lobby",
+    last:false,fl:{},ts:{},auction:null,props:{},lastW:null,mayor:null,log:[],results:null};
+}
+function startGame(s){
+  if(s.players.length<2)throw E("Ai nevoie de cel puțin 2 boieri.");
+  const deck=[...NAMES_M.map(n=>[n,"M"]),...NAMES_F.map(n=>[n,"F"])];
+  s.pdeck=shuffle(deck).slice(0,84);
+  s.players.forEach(p=>{
+    for(const sx of ["M","F"]){
+      const i=s.pdeck.findIndex(c=>c[1]===sx);const [n]=s.pdeck.splice(i,1)[0];
+      const id=++s.seq;s.P[id]={id,n,s:sx,o:p.id,sp:null,nb:false,r:[]};
+    }
+    const [a,b]=peas(s,p.id);a.sp=b.id;b.sp=a.id;
+  });
+  s.players=shuffle(s.players);
+  s.fdeck=shuffle([...FATE_DECK]);
+  const hard=shuffle([...HARD]);
+  s.tdeck=[...shuffle([...GOOD]),...hard.slice(0,s.hard)];
+  s.tunused=hard.slice(s.hard);
+  s.total=s.tdeck.length;
+  s.status="play";
+  log(s,"Jocul începe. Ordinea la masă: "+s.players.map(p=>p.name).join(", ")+".");
+  nextTurn(s);
+}
+
+/* --- turn flow --- */
+function nextTurn(s){
+  if(!s.tdeck.length)return endGame(s);
+  s.turn++;s.tcur=s.tdeck.shift();s.last=s.tdeck.length===0;
+  s.fl={hora:{},bataie:{}};s.ts={};s.props={};s.lastW=null;s.auction=null;
+  s.phase="times";s.players.forEach(p=>p.ready=false);
+  log(s,`Tura ${s.turn}: ${TIMES[s.tcur].t}.`);
+  setDL(s,(s.tm||{}).turn);fx(s,TIMES[s.tcur].g?"good":"times");
+  applyTimes(s);
+  tryAdvance(s);
+}
+function applyTimes(s){
+  const k=s.tcur,P=s.players;
+  switch(k){
+    case"vbune":P.forEach(p=>drawFate(s,p));break;
+    case"fonduri":P.forEach(p=>p.z+=2);break;
+    case"sanz":s.fl.sanz=1;break;
+    case"cerno":s.fl.twins=1;break;
+    case"comunism":{
+      const tz=P.reduce((a,p)=>a+p.z,0),tl=P.reduce((a,p)=>a+p.land,0),n=P.length;
+      P.forEach(p=>{p.z=Math.floor(tz/n);p.land=Math.max(1,Math.min(5,Math.floor(tl/n)));});
+      log(s,`Comunism: fiecare boier are acum ${P[0].z} Zestre și ${P[0].land} Pământ.`);break;}
+    case"zilele":{
+      const m=Math.min(...P.map(p=>p.z));const w=shuffle(P.filter(p=>p.z===m))[0];w.z+=3;
+      log(s,`${w.name} câștigă 3 Zestre la păcănele.`);break;}
+    case"haiducii":P.forEach(p=>{
+      const f=singles(s,p.id).filter(x=>x.s==="F");
+      if(f.length){f.forEach(x=>removeP(s,x.id,false));log(s,`Haiducii fură ${f.length} Mândre de la ${p.name}.`);}
+      else{const l=Math.min(p.z,p.land);p.z-=l;if(l)log(s,`Haiducii iau ${l} Zestre de la ${p.name}.`);}
+    });break;
+    case"batuti":{
+      const pool=shuffle(P.flatMap(p=>p.hand));P.forEach(p=>p.hand=[]);
+      let i=Math.floor(Math.random()*P.length);pool.forEach(c=>{P[i%P.length].hand.push(c);i++;});
+      const mx=Math.max(1,...P.map(p=>p.hand.length));
+      P.forEach(p=>{while(p.hand.length<mx&&s.fdeck.length)drawFate(s,p);});
+      log(s,"Cărțile de Soartă s-au reîmpărțit.");break;}
+    case"catanie":P.forEach(p=>{
+      singles(s,p.id).filter(x=>x.s==="M"&&!x.nb).forEach(x=>{const r=d6();
+        if(r<=3){log(s,`${x.n} (${p.name}) nu se mai întoarce din război (zar ${r}).`);removeP(s,x.id,true);}
+        else log(s,`${x.n} (${p.name}) se întoarce din război (zar ${r}).`);});
+    });break;
+    case"foc":{
+      const st=richest(s);const seen=new Set([st.id]);const q=[[st,true]];
+      while(q.length){const [p,first]=q.shift();
+        const loss=first?Math.floor(p.z/2):Math.min(2,p.z);p.z-=loss;const r=d6();
+        log(s,`Focul îl atinge pe ${p.name}: −${loss} Zestre (zar ${r}).`);
+        if(r<=4)nbrs(s,p.id).forEach(n=>{if(!seen.has(n.id)&&n.z>0){seen.add(n.id);q.push([n,false]);}});
+      }break;}
+    case"autostrada":P.forEach(p=>{const r=d6();
+      if(r<=3){const l=Math.min(Math.floor(p.land/2),p.land-1);p.land-=l;p.z+=l;log(s,`Autostrada trece prin ograda lui ${p.name} (zar ${r}): vinde ${l} Pământ.`);}
+      else log(s,`${p.name} scapă de autostradă (zar ${r}).`);});break;
+    case"dragobete":P.forEach(p=>{
+      coupleList(s,p.id).forEach(([a,b])=>{if(a.s!==b.s)birth(s,p.id,1);});});
+      log(s,"De Dragobete, toate Cuplurile au făcut câte un prunc.");break;
+    case"pasalac":P.forEach(p=>{const l=Math.floor(p.z/2);p.z-=l;
+      if(lastCouple(s,p.id))p.ready=true;});log(s,"Toți boierii plătesc peșcheș jumătate din Zestre.");break;
+    case"primar":s.ts.votes={};break;
+  }
+}
+
+/* times-phase interactive actions */
+function tAct(s,me,a,x){
+  if(s.phase!=="times")throw E("Nu e etapa de Vremuri.");
+  const p=pl(s,me),k=s.tcur;
+  if(a==="ready"){if(TIMES[k].i&&k!=="zilele"&&!p.ready)throw E("Mai întâi alege ce faci la cartea asta.");p.ready=true;}
+  else if(a==="colinda"){
+    if(p.ready)throw E("Ai colindat deja.");
+    if(x){const t=pl(s,x);if(!t||t.id===me)throw E("Alege alt boier.");
+      const want=Math.max(1,singles(s,me).length),take=Math.min(want,t.z);t.z-=take;p.z+=take;
+      log(s,`${p.name} colindă la ${t.name} și primește ${take} Zestre.`);}
+    p.ready=true;}
+  else if(a==="zilele"){
+    const n=+x;if(!(n>=1)||n>p.z)throw E("Nu ai atâta Zestre.");
+    p.z-=n;s.players.forEach(o=>{if(o.id!==me)o.z-=Math.min(n,o.z);});
+    log(s,`${p.name} plătește ${n} Zestre pentru Linghișpir. Ceilalți plătesc la fel.`);}
+  else if(a==="foncirea"){
+    if(p.ready)throw E("Ai plătit deja.");
+    if(p.z>=p.land){p.z-=p.land;log(s,`${p.name} plătește foncirea: ${p.land} Zestre.`);}
+    else{const l=Math.min(Math.floor(p.land/2),p.land-1);log(s,`${p.name} nu are toată foncirea, plătește ${p.z} și pierde ${l} Pământ.`);p.z=0;p.land-=l;}
+    p.ready=true;}
+  else if(a==="potop"){
+    if(p.ready)throw E("Ai ales deja.");
+    potopLose(s,p,x);p.ready=true;}
+  else if(a==="vote"){
+    if(p.ready)throw E("Ai votat deja.");
+    if(!pl(s,x))throw E("Candidat necunoscut.");
+    s.ts.votes[me]=x;p.ready=true;log(s,`${p.name} a votat.`);}
+  else if(a==="pasalac"){
+    if(p.ready)throw E("Ai dat deja.");
+    const c=coupleList(s,me).find(([a,b])=>a.s===x||b.s===x);
+    if(!c)throw E("N-ai un astfel de țăran căsătorit.");
+    const v=c[0].s===x?c[0]:c[1];removeP(s,v.id,false);
+    log(s,`${p.name} dă pe ${v.n} ${x==="F"?"la harem":"la armată"}.`);p.ready=true;}
+  else throw E("Acțiune necunoscută.");
+  tryAdvance(s);
+}
+function potopOptions(s,me){
+  const p=pl(s,me),o=[];const sg=singles(s,me).filter(x=>!isMono(x)||true);
+  if(sg.some(x=>x.s==="M"))o.push("M");
+  if(sg.some(x=>x.s==="F"))o.push("F");
+  if(!lastCouple(s,me))o.push("C");
+  if(p.land>1)o.push("L");
+  return o;
+}
+function potopLose(s,p,x){
+  const opts=potopOptions(s,p.id);
+  if(!opts.length){log(s,`${p.name} nu are ce pierde la potop.`);return;}
+  if(!opts.includes(x))throw E("Nu poți alege asta.");
+  if(x==="L"){p.land--;log(s,`${p.name} pierde un Pământ la potop.`);}
+  else if(x==="C"){const [a,b]=coupleList(s,p.id).slice(-1)[0];log(s,`${a.n} și ${b.n} (${p.name}) se îneacă.`);removeP(s,a.id,true);removeP(s,b.id,true);}
+  else{const v=singles(s,p.id).filter(y=>y.s===x).slice(-1)[0];log(s,`${v.n} (${p.name}) se îneacă.`);removeP(s,v.id,true);}
+}
+function forceTimes(s){
+  const k=s.tcur;
+  s.players.forEach(p=>{if(p.ready)return;
+    if(k==="foncirea")tAct0(()=>{tAct(s,p.id,"foncirea");});
+    else if(k==="potop"){const o=potopOptions(s,p.id);const pick=["L","M","F","C"].find(v=>o.includes(v));if(pick)potopLose(s,p,pick);}
+    else if(k==="pasalac"){const c=coupleList(s,p.id);if(c.length>1){const v=c[c.length-1][0].s==="F"?c[c.length-1][0]:c[c.length-1][1];removeP(s,v.id,false);log(s,`${p.name} dă pe ${v.n} Sultanului.`);}}
+    p.ready=true;});
+}
+function tAct0(f){try{f();}catch(e){}}
+
+function allReady(s){return s.players.every(p=>p.ready);}
+function tryAdvance(s){
+  if(!allReady(s))return;
+  if(s.phase==="times"){
+    if(s.tcur==="primar")tallyMayor(s);
+    enterProd(s);
+  }else if(s.phase==="prod")enterAuct(s);
+}
+function tallyMayor(s){
+  const w={};Object.entries(s.ts.votes||{}).forEach(([v,c])=>{w[c]=(w[c]||0)+peas(s,v).length;});
+  const m=Math.max(0,...Object.values(w));if(!m){log(s,"Nu s-a ales niciun primar.");return;}
+  const win=shuffle(Object.keys(w).filter(c=>w[c]===m))[0];s.mayor=win;
+  log(s,`${pname(s,win)} este noul Primar al satului (${m} voturi).`);
+}
+function enterProd(s){
+  s.phase="prod";s.ts={rolled:{}};setDL(s,(s.tm||{}).turn);
+  s.players.forEach(p=>{p.ready=productive(s,p.id).length===0;});
+  tryAdvance(s);
+}
+function prodRoll(s,me,key,val){
+  if(s.phase!=="prod")throw E("Nu e etapa de Producție.");
+  const p=pl(s,me);const u=productive(s,me).find(x=>x.k===+key);
+  if(!u)throw E("Unitatea nu are Pământ.");
+  if(s.ts.rolled[key])throw E("Ai dat deja cu zarul pentru ei.");
+  let r=d6();
+  if(val){if(!p.fix)throw E("Nu ai Ai călcat în dânsul.");r=+val;p.fix=false;}
+  s.ts.rolled[key]=r;fx(s,"dice");
+  const [z,c]=ROLLTAB[r];p.z+=z;
+  let kids=[];
+  if(c&&u.c&&u.a.s!==u.b.s&&canChild(s,me))kids=birth(s,me,s.fl.twins?2:1);
+  const who=u.c?`${u.a.n} și ${u.b.n}`:u.a.n;
+  log(s,`${p.name}: ${who} dau ${r} → +${z} Zestre${kids.length?`, se naște ${kids.map(k=>k.n).join(" și ")}`:""}.`);
+  if(productive(s,me).every(x=>s.ts.rolled[x.k]))p.ready=true;
+  tryAdvance(s);
+}
+function prodDone(s,me){if(s.phase!=="prod")throw E("Nu e etapa de Producție.");pl(s,me).ready=true;tryAdvance(s);}
+function enterAuct(s){
+  s.players.forEach(p=>p.ready=false);
+  if(s.last||!s.fdeck.length){if(s.last)log(s,"Ultima tură: nu se mai licitează cărți de Soartă.");return enterNeg(s);}
+  s.phase="auct";s.auction={card:s.fdeck.shift(),bid:0,by:null,passed:{}};setDL(s,(s.tm||{}).auct);fx(s,"auct");
+  log(s,`La licitație: ${FATE[s.auction.card].t}.`);
+}
+function bid(s,me,amt){
+  if(s.phase!=="auct")throw E("Licitația s-a încheiat.");
+  const a=s.auction,p=pl(s,me);amt=+amt;
+  if(amt<=a.bid)throw E("Trebuie să dai mai mult decât "+a.bid+".");
+  if(amt>p.z)throw E("Nu ai atâta Zestre.");
+  a.bid=amt;a.by=me;delete a.passed[me];fx(s,"bid");
+  log(s,`${p.name} oferă ${amt} Zestre.`);checkAuct(s);
+}
+function passBid(s,me){if(s.phase!=="auct")throw E("Licitația s-a încheiat.");s.auction.passed[me]=1;checkAuct(s);}
+function checkAuct(s){
+  const a=s.auction;
+  if(!s.players.every(p=>a.passed[p.id]||p.id===a.by))return;
+  if(a.by){const w=pl(s,a.by);w.z-=a.bid;w.hand.push(a.card);fx(s,"win");log(s,`${w.name} câștigă ${FATE[a.card].t} cu ${a.bid} Zestre.`);}
+  else{s.fdisc.push(a.card);log(s,`Nimeni nu vrea ${FATE[a.card].t}. Cartea se aruncă.`);}
+  s.auction=null;enterNeg(s);
+}
+function forceAuct(s){s.players.forEach(p=>{if(p.id!==s.auction.by)s.auction.passed[p.id]=1;});checkAuct(s);}
+function enterNeg(s){s.phase="neg";s.players.forEach(p=>p.ready=false);s.lastW=null;s.props={};
+  s.negStart=(s.turn-1)%s.players.length;s.negI=0;setDL(s,(s.tm||{}).wed);fx(s,"neg");fx(s,"turn",negCur(s));
+  log(s,`Nunți și negocieri: începe ${pname(s,negCur(s))}.`);}
+function advanceNeg(s){
+  const cur=negCur(s);delete s.props[cur];s.negI++;
+  if(s.negI>=s.players.length)return feedAndNext(s);
+  setDL(s,(s.tm||{}).wed);fx(s,"turn",negCur(s));log(s,`Acum e rândul lui ${pname(s,negCur(s))}.`);
+}
+function endNegTurn(s,me){needNeg(s);if(negCur(s)!==me)throw E("Nu e rândul tău.");advanceNeg(s);}
+
+/* --- negotiation actions --- */
+function needNeg(s){if(s.phase!=="neg")throw E("Asta se face doar în etapa de Nunți și negocieri.");}
+function buy(s,me,what){
+  needNeg(s);const p=pl(s,me);
+  if(what==="land"){if(p.land>=5)throw E("Ai deja 5 Pământuri.");if(p.z<4)throw E("Pământul costă 4 Zestre.");p.z-=4;p.land++;log(s,`${p.name} cumpără un Pământ.`);}
+  else if(what==="fate"){if(s.last)throw E("În ultima tură nu se mai cumpără Soartă.");if(!s.fdeck.length)throw E("S-au terminat cărțile de Soartă.");if(p.z<2)throw E("O carte de Soartă costă 2 Zestre.");p.z-=2;drawFate(s,p);log(s,`${p.name} cumpără o carte de Soartă.`);}
+  else if(what==="adopt"){if(singles(s,me).length>=7)throw E("Ai deja 7 țărani singuri.");if(p.z<2)throw E("Adopția costă 2 Zestre.");const c=drawP(s,me,false);if(!c)throw E("Nu mai sunt țărani la Stat.");p.z-=2;log(s,`${p.name} adoptă pe ${c.n}.`);}
+  p.ready=false;fx(s,"coin");
+}
+function give(s,me,to,kind,x){
+  if(!["times","neg"].includes(s.phase))throw E("Daruri și împrumuturi se fac la Vremuri sau la Nunți și negocieri.");
+  const p=pl(s,me),t=pl(s,to);if(!t||t.id===me)throw E("Alege alt boier.");
+  if(kind==="z"){const n=+x;if(!(n>=1)||n>p.z)throw E("Nu ai atâta Zestre.");p.z-=n;t.z+=n;log(s,`${p.name} îi dă ${n} Zestre lui ${t.name}.`);}
+  else{const i=p.hand.indexOf(x);if(i<0)throw E("Nu ai cartea.");p.hand.splice(i,1);t.hand.push(x);log(s,`${p.name} îi dă o carte de Soartă lui ${t.name}.`);}
+}
+function chance(s,a,b,laut){
+  let c=2+(s.fl.sanz?1:0);
+  [a,b].forEach(p=>p.r.forEach(r=>{c+=FATE[r].m||0;}));
+  c+=(laut||[]).filter(id=>s.P[id]&&hasRole(s.P[id],"lautar")&&+id!==a.id&&+id!==b.id).length;
+  return Math.max(0,Math.min(6,c));
+}
+function pairKey(a,b){return [a,b].sort((x,y)=>x-y).join("-");}
+function validPair(s,me,mine,theirs){
+  const a=s.P[mine],b=s.P[theirs];
+  if(!a||a.o!==me)throw E("Alege un țăran de-al tău.");
+  if(!b||b.o===me)throw E("Al doilea țăran trebuie să fie al altui boier.");
+  if(!canMarry(a)||!canMarry(b))throw E("Unul dintre ei nu se poate căsători.");
+  if(a.s===b.s&&!s.fl.ams)throw E("Doar țărani de sex opus (în afară de Nunți la Amsterdam).");
+  return [a,b];
+}
+function propose(s,me,o){
+  needNeg(s);if(negCur(s)!==me)throw E(`Nu e rândul tău. Acum propune ${pname(s,negCur(s))}.`);
+  const [a,b]=validPair(s,me,o.mine,o.theirs);const p=pl(s,me);
+  if(o.suf&&!p.suf)throw E("Nu ai Suflete pereche activ.");
+  s.props[me]={mine:a.id,theirs:b.id,to:b.o,pay:o.pay||"split",laut:o.laut||[],keep:o.keep||"me",suf:!!o.suf,at:Date.now()};
+  log(s,`${p.name} propune nunta ${a.n} + ${b.n} lui ${pname(s,b.o)}.`);
+}
+function cancelProp(s,me){delete s.props[me];}
+function declineProp(s,me,from){const pr=s.props[from];if(!pr||pr.to!==me)throw E("Propunerea nu mai există.");delete s.props[from];log(s,`${pname(s,me)} refuză nunta propusă de ${pname(s,from)}.`);}
+function acceptProp(s,me,from){
+  needNeg(s);const pr=s.props[from];if(!pr||pr.to!==me)throw E("Propunerea nu mai există.");
+  const [a,b]=validPair(s,from,pr.mine,pr.theirs);let roll=null,need=null;
+  const P1=pl(s,from),P2=pl(s,me);const pk=pairKey(a.id,b.id);
+  let cost=2;if(pr.suf)cost=0;else if(s.fl.horaOn&&!s.fl.hora[pk])cost=0;
+  if(cost){
+    if(pr.pay==="split"){if(P1.z<1||P2.z<1)throw E("Fiecare trebuie să aibă cel puțin 1 Zestre.");P1.z--;P2.z--;}
+    else if(pr.pay==="me"){if(P1.z<2)throw E(`${P1.name} nu are 2 Zestre.`);P1.z-=2;}
+    else{if(P2.z<2)throw E("Nu ai 2 Zestre.");P2.z-=2;}
+  }
+  if(s.fl.horaOn)s.fl.hora[pk]=1;
+  delete s.props[from];
+  let ok,txt;
+  if(pr.suf){P1.suf=false;ok=true;txt="Suflete pereche";}
+  else if(P1.fix||P2.fix){(P1.fix?P1:P2).fix=false;ok=true;txt="Ai călcat în dânsul";}
+  else{const c=chance(s,a,b,pr.laut);const r=d6();ok=r<=c;roll=r;need=c;txt=`zar ${r}, trebuia ${c?"1–"+c:"imposibil"}`;}
+  s.wroll={n:(s.wroll?s.wroll.n:0)+1,at:Date.now(),a:a.n,b:b.n,from,to:me,r:roll,need,ok,how:roll?null:txt};
+  fx(s,ok?"wedok":"wedfail");
+  if(!ok){log(s,`Nunta ${a.n} + ${b.n} n-a ieșit (${txt}).`);return;}
+  let groom,bride,recv,giver;
+  if(a.s!==b.s){groom=a.s==="M"?a:b;bride=a.s==="M"?b:a;giver=bride.o;recv=groom.o;}
+  else{const keepFrom=pr.keep==="me";groom=keepFrom?a:b;bride=keepFrom?b:a;giver=bride.o;recv=groom.o;}
+  bride.o=recv;bride.sp=groom.id;groom.sp=bride.id;
+  const g=pl(s,giver);const fc=drawFate(s,g);
+  if(s.mayor&&pl(s,s.mayor))pl(s,s.mayor).z+=1;
+  s.lastW={n:Date.now(),bride:bride.id,groom:groom.id,recv,giver};
+  log(s,`Nuntă! ${groom.n} și ${bride.n} (${txt}). Cuplul rămâne la ${pname(s,recv)}${fc?`, ${g.name} trage o carte de Soartă`:""}.`);
+  P1.ready=false;P2.ready=false;
+}
+function readyNeg(s,me){endNegTurn(s,me);}
+
+/* --- fate cards --- */
+function roleTargets(s,key){
+  const c=FATE[key];return Object.values(s.P).filter(p=>(!c.sex||p.s===c.sex)&&!hasRole(p,key)&&(!c.single||(!p.sp)));
+}
+function playFate(s,me,key,x){
+  const p=pl(s,me);const i=p.hand.indexOf(key);if(i<0)throw E("Nu ai cartea asta.");
+  const c=FATE[key];x=x||{};
+  if(!c.any&&s.phase!=="neg")throw E("Cărțile de Soartă se joacă la Nunți și negocieri.");
+  const used=()=>{p.hand.splice(p.hand.indexOf(key),1);s.fdisc.push(key);fx(s,"card");};
+  const T=id=>{const t=pl(s,id);if(!t)throw E("Alege un boier.");return t;};
+  const PS=id=>{const t=s.P[id];if(!t)throw E("Alege un țăran.");return t;};
+  if(c.role){
+    const t=PS(x.p);if(!roleTargets(s,key).includes(t))throw E("Rolul nu se poate pune pe acest țăran.");
+    t.r.push(key);used();log(s,`${p.name} joacă ${c.t} pe ${t.n} (${pname(s,t.o)}).`);return;
+  }
+  switch(key){
+    case"lac":{const rich=s.players.filter(q=>q.z>=1);if(!rich.length)throw E("Nimeni nu are Zestre.");
+      const m=Math.min(...rich.map(q=>q.z));rich.filter(q=>q.z===m).forEach(q=>{q.z-=Math.min(2,q.z);log(s,`${q.name} pierde 2 Zestre (Din lac în puț).`);});break;}
+    case"sfadit":{const a=PS(x.p);if(!a.sp)throw E("Alege un țăran căsătorit.");if(lastCouple(s,a.o))throw E("Ultimul Cuplu nu se poate despărți.");
+      const b=s.P[a.sp];a.sp=null;b.sp=null;log(s,`${a.n} și ${b.n} (${pname(s,a.o)}) s-au despărțit.`);break;}
+    case"capra":nbrs(s,me).forEach(n=>{const l=Math.min(4,n.z);n.z-=l;log(s,`${n.name} plătește ${l} Zestre la Stat (Să moară capra vecinului).`);});break;
+    case"calcat":if(p.fix)throw E("Ai deja efectul activ.");p.fix=true;log(s,`${p.name} a călcat în ceva norocos.`);break;
+    case"fura":{const w=s.lastW;if(!w)throw E("Se joacă imediat după o nuntă reușită.");
+      const br=s.P[w.bride],gr=s.P[w.groom];if(!br||!gr||br.sp!==gr.id)throw E("Cuplul nu mai există.");
+      if(br.s!=="F")throw E("Merge doar la o nuntă cu mireasă.");
+      const f=PS(x.p);if(f.o!==me||f.s!=="M"||!canMarry(f))throw E("Alege un Fecior singur de-al tău.");
+      gr.sp=null;br.sp=f.id;f.sp=br.id;br.o=me;s.lastW=null;log(s,`${p.name} fură mireasa! ${br.n} se mărită cu ${f.n}.`);break;}
+    case"coasa":{const t=T(x.b);if(t.id===me)throw E("Alege alt boier.");const l=Math.min(3,t.z);t.z-=l;p.z+=l;log(s,`${t.name} îi plătește ${l} Zestre lui ${p.name} (La coasă pă arătură).`);break;}
+    case"luceafar":{const t=T(x.b);if(singles(s,t.id).length>=7)throw E("Boierul are deja 7 țărani singuri.");const ch=drawP(s,t.id,false);if(!ch)throw E("Nu mai sunt țărani.");log(s,`${t.name} primește un copil din flori: ${ch.n}.`);break;}
+    case"suflete":if(p.suf)throw E("Ai deja efectul activ.");p.suf=true;log(s,`${p.name} își găsește sufletul pereche pentru următoarea nuntă.`);break;
+    case"amsterdam":s.fl.ams=1;log(s,"Nunți la Amsterdam: tura asta oricine se poate căsători cu oricine.");break;
+    case"tuica":p.z+=2*p.land;log(s,`${p.name} face țuică: +${2*p.land} Zestre.`);break;
+    case"schimb":{const a=PS(x.p),b=PS(x.q);if(a===b||a.s!=="F"||b.s!=="F")throw E("Alege două Mândre sau Neveste diferite.");
+      const sa=a.sp,sb=b.sp,oa=a.o,ob=b.o;a.sp=sb;a.o=ob;b.sp=sa;b.o=oa;if(sb)s.P[sb].sp=a.id;if(sa)s.P[sa].sp=b.id;
+      log(s,`Schimb de mame: ${a.n} și ${b.n} își schimbă locurile.`);break;}
+    case"hora":s.fl.horaOn=1;log(s,`${p.name} organizează Hora mare: prima încercare de nuntă a fiecărei perechi e gratis.`);break;
+    case"bataie":s.fl.bataie[me]=1;log(s,`Țăranii singuri ai lui ${p.name} nu mănâncă tura asta.`);break;
+    case"vinvremuri":if(x.c==="scurt"){if(!s.tdeck.length)throw E("Nu mai sunt Vremuri de scos.");s.tunused.push(s.tdeck.pop());s.total--;log(s,`${p.name} scurtează jocul cu o tură.`);}
+      else{if(!s.tunused.length)throw E("Nu mai sunt Vremuri nefolosite.");shuffle(s.tunused);s.tdeck.push(s.tunused.pop());s.total++;s.last=false;log(s,`${p.name} lungește jocul cu o tură.`);}
+      break;
+    case"tir":{const n=singles(s,me).filter(q=>q.s==="M").length;p.z+=2*n;log(s,`${p.name}: Cu TIR-ul pă Italia, +${2*n} Zestre.`);break;}
+    case"murat":{const n=singles(s,me).filter(q=>q.s==="F").length;p.z+=2*n;log(s,`${p.name}: Afacere cu murături, +${2*n} Zestre.`);break;}
+    case"descantec":{const k=Math.min(3,s.tdeck.length);const ord=(x.o||[]).map(Number);
+      if(ord.length!==k||new Set(ord).size!==k||ord.some(v=>v<0||v>=k))throw E("Alege ordinea tuturor cărților.");
+      const top=s.tdeck.slice(0,k);s.tdeck.splice(0,k,...ord.map(v=>top[v]));log(s,`${p.name} a descântat următoarele Vremuri.`);break;}
+    case"piatra":{const w=s.lastW;if(!w)throw E("Se joacă imediat după o nuntă reușită.");if(w.recv!==me&&w.giver!==me)throw E("Doar după o nuntă la care ai participat.");
+      const other=w.recv===me?w.giver:w.recv;s.players.forEach(q=>{if(q.id!==me&&q.id!==other){const l=Math.min(2,q.z);q.z-=l;p.z+=l;}});
+      s.lastW=null;log(s,`Casă de piatră! Boierii îl felicită pe ${p.name} cu câte 2 Zestre.`);break;}
+    case"afara":{const t=PS(x.p),b=T(x.b);if(t.o!==me||t.sp)throw E("Alege un țăran singur de-al tău.");if(b.id===me)throw E("Alege alt boier.");
+      t.o=b.id;log(s,`${p.name} îl dă afară pe ${t.n}, care pleacă la ${b.name}.`);break;}
+    case"dulau":case"birt":{const t=PS(x.p);if(t.s!=="M"||!t.sp)throw E("Alege un Bărbat însurat.");if(lastCouple(s,t.o))throw E("Ultimul Cuplu nu se poate destrăma.");
+      log(s,`${t.n} (${pname(s,t.o)}) a fost eliminat (${c.t}).`);removeP(s,t.id,true);break;}
+    case"matrapaz":{const t=T(x.b);if(t.id===me||t.land<=1)throw E("Alege un boier cu mai mult de un Pământ.");if(p.land>=5)throw E("Ai deja 5 Pământuri.");
+      t.land--;p.land++;log(s,`${p.name} mută gardul și ia un Pământ de la ${t.name}.`);break;}
+    case"sexch":{const t=PS(x.p);const ns=t.s==="M"?"F":"M";const i2=s.pdeck.findIndex(q=>q[1]===ns);
+      const old=t.n;if(i2>=0){const [nm]=s.pdeck.splice(i2,1)[0];s.pdeck.push([t.n,t.s]);t.n=nm;}t.s=ns;
+      log(s,`${old} își schimbă sexul și devine ${t.n}.`);break;}
+    default:throw E("Carte necunoscută.");
+  }
+  used();
+}
+
+/* --- feeding, end --- */
+function feedAndNext(s){
+  s.phase="feed";
+  s.players.forEach(p=>{
+    const cs=coupleList(s,p.id);const sg=singles(s,p.id).filter(x=>!x.nb&&!s.fl.bataie[p.id]);
+    const units=cs.length+sg.length;let hungry=Math.max(0,units-p.land);
+    const pay=Math.min(p.z,hungry);p.z-=pay;hungry-=pay;
+    const ll=Math.min(hungry,p.land-1);p.land-=ll;hungry-=ll;
+    const msg=[`${p.name} hrănește ${units} guri`];if(pay)msg.push(`plătește ${pay} Zestre`);if(ll)msg.push(`pierde ${ll} Pământ`);
+    const dead=[];
+    const victims=[...sg].sort((a,b)=>a.r.length-b.r.length);
+    while(hungry>0&&victims.length){const v=victims.shift();dead.push(v.n);removeP(s,v.id,true);hungry--;}
+    while(hungry>0&&!lastCouple(s,p.id)){const [a,b]=coupleList(s,p.id).slice(-1)[0];dead.push(`${a.n} și ${b.n}`);removeP(s,a.id,true);removeP(s,b.id,true);hungry--;}
+    if(dead.length)msg.push(`mor de foame: ${dead.join(", ")}`);
+    log(s,msg.join(", ")+".");
+  });
+  Object.values(s.P).forEach(p=>p.nb=false);
+  nextTurn(s);
+}
+function score(s){
+  const cc=s.players.map(p=>coupleList(s,p.id).length);const mx=Math.max(...cc);
+  const uniq=cc.filter(c=>c===mx).length===1&&mx>0;
+  return s.players.map((p,i)=>{const bonus=uniq&&cc[i]===mx?5:0;
+    return {id:p.id,name:p.name,z:p.z,land:p.land,couples:cc[i],bonus,total:p.z+p.land+bonus,peas:peas(s,p.id).length};
+  }).sort((a,b)=>b.total-a.total||b.peas-a.peas);
+}
+function endGame(s){s.status="ended";s.phase="ended";s.dl=null;fx(s,"win");s.results=score(s);log(s,`Vremurile Grele au trecut. Câștigă ${s.results[0].name} cu ${s.results[0].total} Zestre!`);}
+function force(s){
+  if(s.phase==="times"){forceTimes(s);tryAdvance(s);}
+  else if(s.phase==="prod"){
+    for(const p of s.players){if(p.ready)continue;
+      for(const u of productive(s,p.id)){if(s.phase!=="prod")break;if(!s.ts.rolled[u.k]){try{p.fix=false;prodRoll(s,p.id,u.k);}catch(e){}}}
+      if(s.phase!=="prod")return true;p.ready=true;}
+    tryAdvance(s);}
+  else if(s.phase==="auct")forceAuct(s);
+  else if(s.phase==="neg")advanceNeg(s);
+  return true;
+}
+function timeout(s){if(s.status!=="play"||!s.dl||Date.now()<s.dl)return false;return force(s);}
+if(typeof module!=="undefined")module.exports={timeout,endNegTurn,negCur,newGame,startGame,tAct,prodRoll,prodDone,bid,passBid,buy,give,propose,acceptProp,declineProp,cancelProp,readyNeg,playFate,force,productive,potopOptions,roleTargets,coupleList,singles,peas,canMarry,FATE,TIMES,score};
+</script>
+<script>/* ===== Zestrea UI ===== */
+const $=q=>document.querySelector(q);
+const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LS={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let db=null,user=null,ME=null,myName=LS.get("zname")||"",code=null,S=null,unsubG=null,lobby=[],busy=false,view="loading",hardSel=5,forceArm=0;
+let SH=null; // open sheet state
+let tmSel={turn:30,wed:120,auct:20},lastFx=null,seenW=0,seenNeg={},popQ=[],popOpen=null,popT=null,timeoutTried=null,lastTick=null;
+let chat=[],unsubC=null,chatOpen=false,chatSeen=0,chatFirst=true,muted=LS.get("zmute")==="1";
+
+/* ---------- sound (synthesized, no files) ---------- */
+let AC=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}if(AC.state==="suspended")AC.resume();return AC;}
+document.addEventListener("pointerdown",()=>ac(),{passive:true});
+function tone(f,t0,d,type,g,to){const a=ac();if(!a||muted||a.state!=="running")return;const t=a.currentTime+t0,o=a.createOscillator(),v=a.createGain();o.type=type||"sine";o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g||.15,t+.012);v.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(v).connect(a.destination);o.start(t);o.stop(t+d+.05);}
+function noise(t0,d,g,hp){const a=ac();if(!a||muted||a.state!=="running")return;const b=a.createBuffer(1,Math.max(1,a.sampleRate*d|0),a.sampleRate),ch=b.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=(Math.random()*2-1)*(1-i/ch.length);const src=a.createBufferSource();src.buffer=b;const f=a.createBiquadFilter();f.type="highpass";f.frequency.value=hp||800;const v=a.createGain();v.gain.value=g||.2;src.connect(f).connect(v).connect(a.destination);src.start(a.currentTime+t0);}
+const SFX={
+  dice(){for(let i=0;i<6;i++)noise(i*.06,.045,.28,1800);tone(196,.4,.14,"triangle",.18);},
+  coin(){tone(1318,0,.1,"square",.05);tone(1975,.07,.28,"square",.045);},
+  bid(){tone(170,0,.09,"triangle",.32);noise(0,.035,.25,500);},
+  win(){[659,880,1318].forEach((f,i)=>tone(f,i*.09,.3,"triangle",.14));},
+  card(){noise(0,.22,.16,3000);tone(740,.05,.12,"sine",.06,1100);},
+  wedok(){[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,i*.11,.32,"triangle",.14));},
+  wedfail(){tone(330,0,.28,"sawtooth",.07,220);tone(247,.24,.45,"sawtooth",.07,150);},
+  times(){tone(98,0,1.6,"sine",.28);tone(147,.03,1.3,"sine",.09);noise(0,.5,.06,200);},
+  good(){[784,988,1175].forEach((f,i)=>tone(f,i*.13,.5,"sine",.12));},
+  death(){tone(110,0,.9,"sine",.22,55);},
+  turn(){tone(880,0,.16,"sine",.16);tone(1174,.13,.34,"sine",.14);},
+  tick(){tone(1050,0,.045,"square",.05);},
+  chat(){tone(1320,0,.09,"sine",.09,1760);},
+  neg(){[392,494,587,784].forEach((f,i)=>tone(f,i*.09,.3,"triangle",.11));},
+  auct(){tone(523,0,.09,"square",.06);tone(523,.14,.09,"square",.06);tone(784,.28,.32,"square",.06);}
+};
+function onState(s){
+  if(lastFx===null){lastFx=s.fxn||0;seenW=s.wroll?s.wroll.n:0;if(s.phase==="neg")seenNeg[s.code+":"+s.turn]=1;return;}
+  const fresh=(s.fx||[]).filter(([n])=>n>lastFx).slice(-3);lastFx=Math.max(lastFx,s.fxn||0);
+  fresh.forEach(([n,k,id],i)=>setTimeout(()=>{if(k==="turn"){if(id===ME)SFX.turn();}else if(SFX[k])SFX[k]();},i*220));
+  if(s.wroll&&s.wroll.n>seenW){seenW=s.wroll.n;if(Date.now()-(s.wroll.at||0)<20000)queuePop({t:"w",w:s.wroll});}
+  if(s.phase==="neg"&&!seenNeg[s.code+":"+s.turn]){seenNeg[s.code+":"+s.turn]=1;queuePop({t:"neg"});}
+}
+function queuePop(x){popQ.push(x);if(!popOpen)nextPop();}
+function nextPop(){
+  clearTimeout(popT);const el=$("#pop");popOpen=popQ.shift()||null;
+  if(!popOpen){el.hidden=true;return;}
+  let h="";
+  if(popOpen.t==="w"){const w=popOpen.w;
+    h=`<div class="popc wed ${w.ok?"ok":"no"}"><p class="eyebrow">Nuntă · ${esc(pname(S,w.from))} și ${esc(pname(S,w.to))}</p><h2>${esc(w.a)} + ${esc(w.b)}</h2>
+    <div class="bigdie">${w.r?dieFace(w.r):"✓"}</div>
+    <p class="need">${w.r?`A picat <b>${w.r}</b> · trebuia ${w.need?`1${w.need>1?"–"+w.need:""}`:"un miracol"}`:esc(w.how||"")}</p>
+    <p class="verdict">${w.ok?"Nunta a ieșit!":"Nunta n-a ieșit."}</p><button class="btn" data-a="pop-x">Închide</button></div>`;
+    popT=setTimeout(nextPop,6000);}
+  else if(popOpen.t==="neg"){const p=meP();
+    h=`<div class="popc"><p class="eyebrow">Etapa IV</p><h2>Nunți și negocieri</h2>
+    <p>Acum poți juca <b>cărțile de Soartă</b>. Nunțile se propun pe rând, în sensul acelor de ceasornic. Începe <b>${esc(pname(S,negCur(S)))}</b>.</p>
+    ${p&&p.hand.length?`<div class="grid1">${p.hand.map(k=>`<button class="btn" data-a="pop-card" data-v="${k}">${esc(FATE[k].t)}</button>`).join("")}</div>`:`<p class="muted small">Nu ai cărți acum. Poți cumpăra una cu 2 Zestre.</p>`}
+    <button class="btn primary" data-a="pop-x">Am înțeles</button></div>`;}
+  el.innerHTML=h;el.hidden=false;
+}
+function dieFace(n){const P={1:[[50,50]],2:[[28,28],[72,72]],3:[[25,25],[50,50],[75,75]],4:[[28,28],[72,28],[28,72],[72,72]],5:[[25,25],[75,25],[50,50],[25,75],[75,75]],6:[[28,22],[72,22],[28,50],[72,50],[28,78],[72,78]]}[n]||[];
+  return `<svg viewBox="0 0 100 100" aria-label="zar ${n}"><rect x="4" y="4" width="92" height="92" rx="18" class="df"/>${P.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="9" class="dp"/>`).join("")}</svg>`;}
+
+/* ---------- chat ---------- */
+function subChat(c){
+  if(unsubC)unsubC();chat=[];chatFirst=true;chatSeen=+(LS.get("zchat:"+c)||0);
+  unsubC=db.collection("chat/"+c+"/m").orderBy("t","desc").limit(60).onSnapshot(q=>{
+    const list=q.docs.map(d=>d.data()).filter(m=>m&&m.t).sort((a,b)=>a.t-b.t);
+    if(!chatFirst&&list.some(m=>m.id!==ME&&!chat.some(o=>o.t===m.t&&o.id===m.id)))SFX.chat();
+    chatFirst=false;chat=list;renderChat();
+  },()=>{});
+}
+function renderChat(){
+  const btn=$("#chatbtn"),box=$("#chat");if(!btn)return;
+  const inGame=view==="game"&&S;btn.hidden=!inGame;if(!inGame){box.hidden=true;return;}
+  if(chatOpen&&chat.length){chatSeen=chat[chat.length-1].t;LS.set("zchat:"+code,String(chatSeen));}
+  const unread=chat.filter(m=>m.t>chatSeen&&m.id!==ME).length;
+  btn.querySelector("b").textContent=unread||"";btn.querySelector("b").hidden=!unread;
+  box.hidden=!chatOpen;
+  if(chatOpen){const l=$("#chatlist");const atEnd=l.scrollTop+l.clientHeight>=l.scrollHeight-30;
+    l.innerHTML=chat.length?chat.map(m=>`<li class="${m.id===ME?"me":""}"><b>${esc(m.n)}</b><span>${esc(m.m)}</span></li>`).join(""):`<li class="sys">Niciun mesaj încă. Negociați aici.</li>`;
+    if(atEnd||l.dataset.first!=="0"){l.scrollTop=l.scrollHeight;l.dataset.first="0";}}
+}
+async function sendChat(){
+  const i=$("#chatin");const m=i.value.trim().slice(0,300);if(!m||!code)return;i.value="";
+  const me=meP();
+  try{await db.collection("chat/"+code+"/m").add({t:Date.now(),id:ME,n:(me&&me.name)||myName||"Boier",m});}
+  catch(e){toast("Mesajul nu s-a trimis.");i.value=m;}
+}
+const fmtT=sec=>{sec=Math.max(0,Math.ceil(sec));return sec>=60?`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`:`${sec} s`;};
+function mustAct(){const p=meP();if(!p)return false;
+  if(S.phase==="times"||S.phase==="prod")return !p.ready;
+  if(S.phase==="auct")return S.auction&&!S.auction.passed[ME]&&S.auction.by!==ME;
+  if(S.phase==="neg")return negCur(S)===ME;return false;}
+setInterval(()=>{
+  if(view!=="game"||!S||S.status!=="play"||!S.dl)return;
+  const rem=(S.dl-Date.now())/1000,el=$("#tbar");
+  if(el){el.querySelector("i").style.width=Math.max(0,Math.min(1,rem/(S.dlLen||1)))*100+"%";el.querySelector("span").textContent=rem>0?fmtT(rem):"Timpul a expirat";el.classList.toggle("low",rem<=5);}
+  const sec=Math.ceil(rem);if(rem>0&&rem<=5&&sec!==lastTick&&mustAct()){lastTick=sec;SFX.tick();}
+  if(rem<-1.2&&timeoutTried!==S.dl&&!busy){timeoutTried=S.dl;setTimeout(()=>act(s=>timeout(s),true),Math.random()*600);}
+},250);
+
+/* ---------- boot ---------- */
+async function boot(){
+  render();
+  const use=window.claude&&window.claude.use;
+  if(use){[db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);}
+  if(!db){view="nodb";render();return;}
+  ME=user?await user.id():null;
+  if(!ME){ME=LS.get("zid")||("g"+Math.random().toString(36).slice(2,10));LS.set("zid",ME);}
+  if(!myName&&user){const m=await user.me();myName=(m&&m.name)||"";}
+  db.collection("games").orderBy("created","desc").limit(25).onSnapshot(q=>{lobby=q.docs.map(d=>d.data());if(view==="lobby")renderLobbyList();},e=>toast("Lista de jocuri nu se poate încărca."));
+  view="lobby";render();
+  const last=LS.get("zcode");if(last)openGame(last,true);
+}
+function openGame(c,silent){
+  if(unsubG)unsubG();code=c;LS.set("zcode",c);lastFx=null;subChat(c);
+  unsubG=db.doc("games/"+c).onSnapshot(sn=>{
+    if(!sn.exists){if(!silent)toast("Jocul nu mai există.");closeGame();return;}
+    S=sn.data();onState(S);
+    if(!S.players.some(p=>p.id===ME)&&S.status!=="lobby"){closeGame();if(!silent)toast("Nu ești în acest joc.");return;}
+    view="game";render();
+  },e=>{toast("Conexiunea cu jocul s-a pierdut. Redeschide pagina.");});
+}
+function closeGame(){if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;LS.set("zcode",null);view="lobby";render();}
+const gref=()=>db.doc("games/"+code);
+
+async function act(fn,silent){
+  if(busy)return;busy=true;document.body.classList.add("busy");
+  try{
+    const lock=db.doc("locks/"+code);let got=false;
+    for(let i=0;i<20&&!got;i++){
+      const r=await lock.acquire({holder:ME+"-"+Math.random().toString(36).slice(2,7),ttlMs:1500});
+      got=r.acquired;if(!got)await sleep(250+Math.random()*350);
+    }
+    if(!got){if(silent)return false;throw E("Altcineva face o mutare chiar acum. Mai încearcă o dată.");}
+    const sn=await gref().get();if(!sn.exists)throw E("Jocul nu mai există.");
+    const s=JSON.parse(JSON.stringify(sn.data()));
+    if(fn(s)===false)return true;s.v=(s.v||0)+1;
+    await gref().set(s);S=s;render();
+    return true;
+  }catch(e){
+    if(silent)return false;
+    if(e.user)toast(e.message);
+    else if(e.code==="denied")toast("Nu am acces la baza de date. Verifică regulile Firebase (vezi instrucțiunile).");
+    else{toast("Ceva n-a mers. Mai încearcă o dată.");console.error(e);}
+    return false;
+  }finally{busy=false;document.body.classList.remove("busy");}
+}
+let toastT;
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,3800);}
+
+/* ---------- small renderers ---------- */
+function fig(p,cls=""){
+  const F=p.s==="F";
+  return `<svg class="fig ${F?"f":"m"} ${cls}" viewBox="0 0 24 36" aria-hidden="true">${F?
+   `<path d="M6 9 Q12 1 18 9 Z" class="k"/><circle cx="12" cy="9" r="4.2" class="h"/><path d="M8 14 h8 l4 17 h-16 z" class="b"/><path d="M5.5 25 h13" class="st"/><path d="M5 28.5 h14" class="st2"/>`:
+   `<rect x="7" y="2.4" width="10" height="3" rx="1" class="k"/><circle cx="12" cy="9" r="4.2" class="h"/><rect x="7" y="14" width="10" height="13" rx="1.5" class="b"/><path d="M7 20 h10" class="st"/><path d="M9 27 v7 M15 27 v7" class="lg"/>`}</svg>`;
+}
+const roleTag=r=>`<span class="tag ${FATE[r].m<0?"neg":FATE[r].m>0?"pos":""}">${esc(FATE[r].t)}</span>`;
+function chip(p,opts={}){
+  const sel=opts.sel?" sel":"",dis=opts.dis?" dis":"";
+  return `<button class="pchip${sel}${dis}" ${opts.a?`data-a="${opts.a}" data-v="${p.id}"`:"disabled"}>${fig(p,p.nb?"nb":"")}<span><b>${esc(p.n)}</b>${p.nb?`<i>nou-născut</i>`:""}${p.r.map(roleTag).join("")}</span></button>`;
+}
+function zIcon(){return `<svg class="ico" viewBox="0 0 20 16" aria-hidden="true"><path d="M2 5 h16 v9 h-16z" class="c1"/><path d="M1 3 h18 v3 h-18z" class="c2"/><path d="M10 7.5 l2 2 -2 2 -2 -2z" class="c3"/></svg>`;}
+function lIcon(){return `<svg class="ico" viewBox="0 0 20 16" aria-hidden="true"><path d="M1 13 L7 5 L11 10 L14 7 L19 13z" class="l1"/><path d="M1 13 h18 v2 h-18z" class="l2"/></svg>`;}
+const meP=()=>S&&pl(S,ME);
+const others=()=>S.players.filter(p=>p.id!==ME);
+const isHost=()=>S&&S.host===ME;
+
+/* ---------- top-level render ---------- */
+function render(){
+  const app=$("#app");
+  if(view==="loading"){app.innerHTML=`<div class="center"><div class="spin"></div><p>Se deschide domeniul…</p></div>`;return;}
+  if(view==="nodb"){app.innerHTML=`<section class="card pad"><h2>Nu mă pot conecta</h2><p>Zestrea păstrează mutările tuturor jucătorilor într-o bază de date comună și are nevoie de internet. Verifică conexiunea și redeschide aplicația.</p><button class="btn primary" onclick="location.reload()">Încearcă din nou</button></section>`;return;}
+  if(view==="lobby"){renderLobby();renderChat();return;}
+  if(view==="game"&&S){S.status==="lobby"?renderRoom():renderGame();if(SH)renderSheet();}
+  renderChat();
+}
+
+/* ---------- lobby ---------- */
+function renderLobby(){
+  const app=$("#app");
+  if(!$("#lobbyshell")){
+    app.innerHTML=`<div id="lobbyshell">
+    <section class="hero">
+      <p class="eyebrow">Joc de societate pentru 3–6 boieri</p>
+      <h1 class="word">Zestrea</h1>
+      <p class="lead">Mărită Mândre, însoară Feciori și ține-ți țăranii sătui până trec Vremurile Grele. Cine strânge cea mai multă Zestre câștigă.</p>
+    </section>
+    <section class="card pad stack">
+      <label class="lbl" for="nm">Cum te cheamă, boierule?</label>
+      <input id="nm" maxlength="24" placeholder="ex. Vornicul Alin" value="${esc(myName)}" autocomplete="off">
+      <div class="row wrap"><span class="lbl">Vremuri Grele</span>
+        <div class="seg" id="hardseg">${[5,6,7].map(n=>`<button data-a="hard" data-v="${n}" class="${n===hardSel?"on":""}">${n}</button>`).join("")}</div>
+        <span class="muted small">5 e jocul normal, 6–7 îl lungesc</span></div>
+      <p class="lbl">Cronometre</p>
+      ${tmRow("turn","Pe tură",[[0,"Fără"],[20,"20 s"],[30,"30 s"],[45,"45 s"],[60,"1 min"]])}
+      ${tmRow("wed","Rândul la nunți",[[0,"Fără"],[60,"1 min"],[120,"2 min"],[180,"3 min"]])}
+      ${tmRow("auct","Licitație",[[0,"Fără"],[10,"10 s"],[20,"20 s"],[30,"30 s"]])}
+      <p class="small muted">Când expiră timpul, jocul trece mai departe singur: se aruncă zarurile rămase, licitația se încheie, rândul trece la următorul boier.</p>
+      <button class="btn primary" data-a="create">Deschide un joc nou</button>
+    </section>
+    <h3 class="sect">Jocuri deschise</h3>
+    <div id="list"></div>
+    <details class="card pad rules"><summary>Reguli pe scurt</summary>${rulesHTML()}</details>
+    </div>`;
+    $("#nm").addEventListener("input",e=>{myName=e.target.value.trim();LS.set("zname",myName);});
+  }
+  renderLobbyList();
+}
+function renderLobbyList(){
+  const el=$("#list");if(!el)return;
+  const mine=lobby.filter(g=>g.status!=="ended"&&(g.status==="lobby"||g.players.some(p=>p.id===ME)));
+  if(!mine.length){el.innerHTML=`<p class="empty">Niciun joc deschis încă. Deschide unul și trimite-le prietenilor linkul acestei pagini.</p>`;return;}
+  el.innerHTML=mine.map(g=>{
+    const inG=g.players.some(p=>p.id===ME);
+    return `<div class="card game-row"><div><b class="code">${esc(g.code)}</b> <span class="muted">· ${g.status==="lobby"?"se adună boierii":"Tura "+g.turn+" din "+g.total}</span><div class="small">${g.players.map(p=>esc(p.name)).join(", ")}</div></div>
+      ${inG?`<button class="btn" data-a="open" data-v="${g.code}">Continuă</button>`:g.status==="lobby"&&g.players.length<6?`<button class="btn primary" data-a="join" data-v="${g.code}">Intră</button>`:`<span class="muted small">în desfășurare</span>`}</div>`;
+  }).join("");
+}
+function tmRow(k,label,opts){return `<div class="tmrow"><span>${label}</span><div class="seg" data-tm="${k}">${opts.map(([v,t])=>`<button data-a="tm" data-v="${k}:${v}" class="${tmSel[k]===v?"on":""}">${t}</button>`).join("")}</div></div>`;}
+const tmTxt=t=>t?fmtT(t):"fără limită";
+function needName(){if(!myName){toast("Scrie-ți întâi numele.");$("#nm")&&$("#nm").focus();return false;}return true;}
+async function createGame(){
+  if(!needName()||busy)return;
+  const L="ABCDEFGHJKLMNPRSTUVZ";let c="";for(let i=0;i<4;i++)c+=L[Math.floor(Math.random()*L.length)];
+  busy=true;
+  try{await db.doc("games/"+c).set(newGame(c,ME,myName,hardSel,{...tmSel}));openGame(c);}
+  catch(e){toast(e.code==="denied"?"Nu am acces la baza de date. Verifică regulile Firebase (vezi instrucțiunile).":"Jocul nu s-a putut crea. Verifică internetul și mai încearcă.");}
+  finally{busy=false;}
+}
+async function joinGame(c){
+  if(!needName())return;
+  code=c;
+  const ok=await act(s=>{
+    if(s.players.some(p=>p.id===ME))return;
+    if(s.status!=="lobby")throw E("Jocul a început deja.");
+    if(s.players.length>=6)throw E("Masa e plină (6 boieri).");
+    s.players.push({id:ME,name:myName,z:0,land:3,hand:[],ready:false,fix:false,suf:false});
+    log(s,`${myName} s-a așezat la masă.`);
+  });
+  if(ok)openGame(c);else code=null;
+}
+
+/* ---------- waiting room ---------- */
+function renderRoom(){
+  const n=S.players.length;
+  $("#app").innerHTML=`${topBar()}
+  <section class="card pad stack">
+    <h2>Masa ${esc(S.code)}</h2>
+    <p class="muted">Prietenii deschid aceeași pagină și apasă „Intră” la jocul ${esc(S.code)}. Se joacă cu ${S.hard} Vremuri Grele.</p>
+    <p class="small">Cronometre: tură ${tmTxt((S.tm||{}).turn)} · rândul la nunți ${tmTxt((S.tm||{}).wed)} · licitație ${tmTxt((S.tm||{}).auct)}</p>
+    <p class="small muted">Ordinea la masă se trage la începutul jocului și rămâne aceeași până la final, în sensul acelor de ceasornic.</p>
+    <ul class="seats">${S.players.map((p,i)=>`<li><span class="seatn">${i+1}</span>${esc(p.name)}${p.id===S.host?` <span class="tag">gazdă</span>`:""}${p.id===ME?` <span class="tag pos">tu</span>`:""}</li>`).join("")}</ul>
+    ${isHost()?`<button class="btn primary" data-a="start" ${n<2?"disabled":""}>Începe jocul (${n} ${n===1?"boier":"boieri"})</button>${n<3?`<p class="small muted">Regulile sunt gândite pentru 3–6 boieri. Cu 2 se poate testa.</p>`:""}`:`<p class="waiting">Așteptăm ca ${esc(pname(S,S.host))} să înceapă jocul…</p>`}
+    <button class="btn ghost" data-a="leave">Ieși de la masă</button>
+  </section>`;
+}
+function topBar(){
+  return `<header class="top"><button class="home" data-a="home" aria-label="Înapoi la jocuri">‹</button><span class="word sm">Zestrea</span>${S?`<span class="code">${esc(S.code)}</span>`:""}${S&&S.status==="play"?`<span class="turn">Tura ${S.turn}<small>/${S.total}</small></span>`:""}<button class="mute ${muted?"off":""}" data-a="mute" aria-label="${muted?"Pornește sunetul":"Oprește sunetul"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" class="sp"/>${muted?`<path d="M16 9l5 6M21 9l-5 6" class="sw"/>`:`<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" class="sw"/>`}</svg></button></header>`;
+}
+
+/* ---------- game ---------- */
+function renderGame(){
+  const p=meP();if(!p)return;
+  const ph=S.phase;
+  $("#app").innerHTML=`${topBar()}
+  ${S.status==="ended"?endHTML():`
+  <nav class="phases">${PHASES.map(([k,t],i)=>`<span class="${k===ph?"on":""} ${PHASES.findIndex(x=>x[0]===ph)>i?"done":""}"><b>${"I II III IV V".split(" ")[i]}</b>${t}</span>`).join("")}</nav>
+  ${S.dl?`<div id="tbar" class="tbar"><i></i><span>${fmtT((S.dl-Date.now())/1000)}</span><em>${S.phase==="neg"?`Rândul lui ${esc(pname(S,negCur(S)))}`:S.phase==="auct"?"Licitația se închide în":"Timp rămas"}</em></div>`:""}
+  ${timesHTML()}
+  <section class="card pad panel">${panelHTML()}</section>`}
+  ${domainHTML(p)}
+  ${handHTML(p)}
+  <h3 class="sect">Ceilalți boieri</h3>
+  ${others().map(otherHTML).join("")}
+  <details class="card pad"><summary>Cronica satului</summary><ol class="log">${S.log.slice().reverse().slice(0,40).map(l=>`<li>${esc(l[1])}</li>`).join("")}</ol></details>
+  <details class="card pad rules"><summary>Reguli pe scurt</summary>${rulesHTML()}</details>
+  ${isHost()&&S.status==="play"?`<div class="host"><button class="btn ghost small" data-a="force">${forceArm?"Apasă din nou ca să treci mai departe":"Gazdă: treci peste cine nu răspunde"}</button></div>`:""}`;
+}
+function timesHTML(){
+  const c=TIMES[S.tcur];if(!c)return"";
+  const p=meP();const seer=peas(S,ME).some(x=>hasRole(x,"clarv"));
+  return `<section class="times ${c.g?"good":"hard"}"><div class="band"></div><p class="eyebrow">${c.g?"Vremuri Bune":"Vremuri Grele"} · ${S.last?"ultima tură":`${S.tdeck.length} ${S.tdeck.length===1?"carte rămasă":"cărți rămase"}`}</p><h2>${esc(c.t)}</h2><p>${esc(c.d)}</p>
+  ${seer&&S.tdeck.length?`<p class="seer">Clarvăzătoarea ta vede ce urmează: <b>${esc(TIMES[S.tdeck[0]].t)}</b></p>`:""}
+  ${S.mayor?`<p class="small muted">Primarul satului: ${esc(pname(S,S.mayor))}</p>`:""}</section>`;
+}
+function readyRow(){return `<div class="readyrow">${S.players.map(q=>`<span class="rd ${q.ready?"ok":""}">${esc(q.name)}${q.id===ME?" (tu)":""}</span>`).join("")}</div>`;}
+function panelHTML(){
+  const p=meP(),ph=S.phase,k=S.tcur;
+  if(ph==="times"){
+    let h=`<h3>I. Vremuri</h3>`;
+    if(p.ready)h+=`<p class="waiting">Gata. Așteptăm ceilalți boieri.</p>`;
+    else if(k==="colinda")h+=`<p>La cine mergi la colindat? Primești ${Math.max(1,singles(S,ME).length)} Zestre (cât are gazda).</p><div class="grid2">${others().map(o=>`<button class="btn" data-a="t" data-v="colinda:${o.id}">${esc(o.name)} <small>${o.z} Z</small></button>`).join("")}</div><button class="btn ghost" data-a="t" data-v="colinda:">Nu merg</button>`;
+    else if(k==="zilele")h+=`<p>Plătești pentru Linghișpir? Ceilalți vor plăti aceeași sumă.</p><div class="grid3">${[1,2,3,5].filter(n=>n<=p.z).map(n=>`<button class="btn" data-a="t" data-v="zilele:${n}">Plătesc ${n}</button>`).join("")}</div><button class="btn primary" data-a="t" data-v="ready:">Mai departe</button>`;
+    else if(k==="foncirea")h+=`<p>Datorezi ${p.land} Zestre (ai ${p.z}). ${p.z<p.land?`Dacă nu ai tot, pierzi ${Math.min(Math.floor(p.land/2),p.land-1)} Pământ. Poți cere împrumut.`:""}</p><div class="row wrap"><button class="btn primary" data-a="t" data-v="foncirea:">Plătesc foncirea</button><button class="btn" data-a="g-open">Dă sau împrumută Zestre</button></div>`;
+    else if(k==="potop"){const o=potopOptions(S,ME);const lab={M:"Un Fecior singur",F:"O Mândră singură",C:"Un Cuplu",L:"Un Pământ"};
+      h+=o.length?`<p>Ce pierzi la potop?</p><div class="grid2">${o.map(v=>`<button class="btn" data-a="t" data-v="potop:${v}">${lab[v]}</button>`).join("")}</div>`:`<p>Nu ai ce pierde.</p><button class="btn primary" data-a="t" data-v="potop:">Mai departe</button>`;}
+    else if(k==="primar")h+=`<p>Pe cine votezi? Ai ${peas(S,ME).length} voturi, câte unul pentru fiecare țăran.</p><div class="grid2">${S.players.map(o=>`<button class="btn" data-a="t" data-v="vote:${o.id}">${esc(o.name)}${o.id===ME?" (tu)":""}</button>`).join("")}</div>`;
+    else if(k==="pasalac"){const cs=coupleList(S,ME);const hasF=cs.some(([a,b])=>a.s==="F"||b.s==="F"),hasM=cs.some(([a,b])=>a.s==="M"||b.s==="M");
+      h+=`<p>Pe cine dai Sultanului?</p><div class="grid2">${hasF?`<button class="btn" data-a="t" data-v="pasalac:F">O Nevastă la harem</button>`:""}${hasM?`<button class="btn" data-a="t" data-v="pasalac:M">Un Bărbat la armată</button>`:""}</div>`;}
+    else h+=`<p class="muted">Efectul cărții s-a aplicat. Vezi Cronica satului pentru detalii.</p><button class="btn primary" data-a="t" data-v="ready:">Mai departe</button>`;
+    if(p.hand.includes("calcat")&&!p.fix)h+=`<button class="btn ghost small" data-a="f-open" data-v="calcat">Joacă Ai călcat în dânsul</button>`;
+    return h+readyRow();
+  }
+  if(ph==="prod"){
+    const u=productive(S,ME),all=units(S,ME);
+    let h=`<h3>II. Producție</h3><p class="small muted">1: +1 Zestre și un copil · 2–3: +2 și un copil · 4–5: +2 · 6: +3${!canChild(S,ME)?" · Ai 7 țărani singuri, nu se mai nasc copii.":""}${S.fl.twins?" · Tura asta se nasc gemeni.":""}</p>`;
+    if(!u.length)h+=`<p>Niciun Cuplu nu are Pământ, nu produci nimic tura asta.</p>`;
+    h+=u.map(x=>{const r=S.ts.rolled[x.k];const nm=x.c?`${esc(x.a.n)} și ${esc(x.b.n)}`:esc(x.a.n);
+      return `<div class="unit">${fig(x.a)}${x.c?fig(x.b):""}<span class="un">${nm}</span>${r?`<span class="die">${r}</span>`:p.ready?"":p.fix?`<span class="pick">${[1,2,3,4,5,6].map(v=>`<button data-a="roll" data-v="${x.k}:${v}">${v}</button>`).join("")}</span>`:`<button class="btn small primary" data-a="roll" data-v="${x.k}:">Dă cu zarul</button>`}</div>`;}).join("");
+    if(all.length>u.length)h+=`<p class="small muted">${all.length-u.length} ${all.length-u.length===1?"Cuplu nu are":"Cupluri nu au"} Pământ și nu produc.</p>`;
+    if(p.fix)h+=`<p class="small seer">Ai călcat în dânsul: alegi tu numărul la următoarea aruncare.</p>`;
+    else if(p.hand.includes("calcat"))h+=`<button class="btn ghost small" data-a="f-open" data-v="calcat">Joacă Ai călcat în dânsul</button>`;
+    if(!p.ready)h+=`<button class="btn" data-a="prod-done">Am terminat producția</button>`;else h+=`<p class="waiting">Gata. Așteptăm ceilalți boieri.</p>`;
+    return h+readyRow();
+  }
+  if(ph==="auct"){
+    const a=S.auction,c=FATE[a.card];const lead=a.by===ME,passed=a.passed[ME];
+    return `<h3>III. Licitație</h3><div class="fate big"><div class="band"></div><b>${esc(c.t)}</b>${c.role?`<i>Rol</i>`:""}<p>${esc(c.d)}</p></div>
+      <p class="bidline">${a.by?`Oferta: <b>${a.bid} Zestre</b> de la ${esc(pname(S,a.by))}`:"Nicio ofertă încă. Pornește de la 1 Zestre."}</p>
+      ${lead?`<p class="waiting">Tu conduci licitația.</p>`:`<div class="grid3">${[1,2,3].map(d=>a.bid+d).filter(v=>v<=p.z).map(v=>`<button class="btn primary" data-a="bid" data-v="${v}">Dau ${v}</button>`).join("")||`<p class="small muted">Nu ai destulă Zestre.</p>`}</div>
+      ${passed?`<p class="small muted">Ai spus pas. Poți reintra cu o ofertă.</p>`:`<button class="btn ghost" data-a="pass">Pas</button>`}`}
+      <div class="readyrow">${S.players.map(q=>`<span class="rd ${a.passed[q.id]?"":"ok"}">${esc(q.name)}${a.passed[q.id]?": pas":q.id===a.by?": conduce":""}</span>`).join("")}</div>`;
+  }
+  if(ph==="neg"){
+    const cur=negCur(S),myTurn=cur===ME,n=S.players.length;
+    let h=`<h3>IV. Nunți și negocieri</h3><div class="order">${S.players.map((_,i)=>S.players[(S.negStart+i)%n]).map((q,i)=>`<span class="${i<S.negI?"done":i===S.negI?"cur":""}">${esc(q.name)}${q.id===ME?" (tu)":""}</span>`).join(`<span class="arr">›</span>`)}</div>
+    ${myTurn?`<p class="turnme">E rândul tău să propui nunți.</p>`:`<p class="waiting">Acum propune ${esc(pname(S,cur))}. Între timp poți juca cărți, cumpăra și răspunde la propuneri.</p>`}`;
+    Object.entries(S.props).filter(([f,pr])=>pr.to===ME).forEach(([f,pr])=>{const a=S.P[pr.mine],b=S.P[pr.theirs];if(!a||!b)return;
+      h+=`<div class="prop in"><p><b>${esc(pname(S,f))}</b> îți propune nunta <b>${esc(a.n)}</b> + <b>${esc(b.n)}</b> (al tău).</p><p class="small">${propTerms(pr,a,b,f)}</p><div class="row"><button class="btn primary" data-a="p-acc" data-v="${f}">Acceptă și dă cu zarul</button><button class="btn ghost" data-a="p-dec" data-v="${f}">Refuz</button></div></div>`;});
+    const mine=S.props[ME];
+    if(mine){const a=S.P[mine.mine],b=S.P[mine.theirs];if(a&&b)h+=`<div class="prop out"><p>Ai propus nunta <b>${esc(a.n)}</b> + <b>${esc(b.n)}</b>. Așteptăm răspunsul lui ${esc(pname(S,mine.to))}.</p><p class="small">${propTerms(mine,a,b,ME)}</p><button class="btn ghost small" data-a="p-can">Retrage propunerea</button></div>`;}
+    const w=S.lastW;
+    if(w){const can=[];if(p.hand.includes("fura")&&S.P[w.bride]&&S.P[w.bride].s==="F")can.push("fura");if(p.hand.includes("piatra")&&(w.recv===ME||w.giver===ME))can.push("piatra");
+      if(can.length)h+=`<div class="prop out"><p>Tocmai a fost o nuntă. Poți juca acum:</p><div class="row wrap">${can.map(k=>`<button class="btn" data-a="f-open" data-v="${k}">${esc(FATE[k].t)}</button>`).join("")}</div></div>`;}
+    h+=`<div class="grid2 acts">
+      <button class="btn primary" data-a="w-open" ${!myTurn||S.props[ME]?"disabled":""}>${myTurn?S.props[ME]?"Aștepți răspunsul":"Propune o nuntă":"Propui când vine rândul tău"}</button>
+      <button class="btn" data-a="buy" data-v="land" ${p.z<4||p.land>=5?"disabled":""}>Cumpără Pământ <small>4 Z</small></button>
+      <button class="btn" data-a="buy" data-v="fate" ${p.z<2||S.last||!S.fdeck.length?"disabled":""}>Cumpără Soartă <small>2 Z</small></button>
+      <button class="btn" data-a="buy" data-v="adopt" ${p.z<2||singles(S,ME).length>=7?"disabled":""}>Adoptă un copil <small>2 Z</small></button>
+      <button class="btn" data-a="g-open">Dă Zestre sau Soartă</button>
+      </div>`;
+    const fd=feedPreview(p);
+    h+=`<p class="small muted feedp">La Hrană: ${fd.units} ${fd.units===1?"gură":"guri"} de hrănit, ${p.land} pe Pământ.${fd.need?` Vei plăti ${Math.min(fd.need,p.z)} Zestre${fd.need>p.z?` și vei pierde ${Math.min(fd.need-p.z,p.land-1)} Pământ`:""}${fd.need>p.z+p.land-1?`; ${fd.need-p.z-(p.land-1)} țărani mor de foame`:""}.`:" Nu plătești nimic."}</p>`;
+    if(myTurn)h+=`<button class="btn ochre" data-a="endturn">Termin rândul${S.negI===n-1?" (urmează Hrana)":""}</button>`;
+    return h;
+  }
+  return "";
+}
+function propTerms(pr,a,b,from){
+  if(pr.suf)return "Suflete pereche: nunta iese sigur, fără Zestre.";
+  const pk=pairKey(a.id,b.id);const free=S.fl.horaOn&&!S.fl.hora[pk];
+  const pay=free?"Gratis (Hora mare)":pr.pay==="split"?"Fiecare plătește 1 Zestre":pr.pay==="me"?`Plătește ${esc(pname(S,from))} 2 Zestre`:`Plătește ${esc(pname(S,pr.to))} 2 Zestre`;
+  const c=chance(S,a,b,pr.laut);const l=(pr.laut||[]).filter(id=>S.P[id]).map(id=>S.P[id].n);
+  return `${pay}. Reușește la ${c?`1–${c}`:"nimic"} pe zar${l.length?` · Lăutari: ${l.map(esc).join(", ")}`:""}${a.s===b.s?` · Cuplul rămâne la ${esc(pname(S,pr.keep==="me"?from:pr.to))}`:""}.`;
+}
+function feedPreview(p){
+  const units=coupleList(S,p.id).length+singles(S,p.id).filter(x=>!x.nb&&!S.fl.bataie[p.id]).length;
+  return {units,need:Math.max(0,units-p.land)};
+}
+function domainHTML(p){
+  const cs=coupleList(S,p.id),sg=singles(S,p.id);const prodKeys=new Set(units(S,p.id).slice(0,p.land).map(u=>u.k));
+  return `<section class="card pad dom"><div class="domhead"><h3>Domeniul tău</h3>${p.fix?`<span class="tag pos">Ai călcat în dânsul</span>`:""}${p.suf?`<span class="tag pos">Suflete pereche</span>`:""}</div>
+  <div class="stats"><span>${zIcon()}<b>${p.z}</b> Zestre</span><span>${lIcon()}<b>${p.land}</b>/5 Pământ</span><span><b>${cs.length}</b> Cupluri</span><span><b>${sg.length}</b> singuri</span></div>
+  <div class="peas">${cs.map(([a,b])=>`<div class="couple ${prodKeys.has(a.id)?"land":""}">${chipStatic(a)}${chipStatic(b)}${prodKeys.has(a.id)?`<span class="onland">pe Pământ</span>`:""}</div>`).join("")}
+  ${sg.map(x=>`<div class="single ${prodKeys.has(x.id)?"land":""}">${chipStatic(x)}</div>`).join("")}</div></section>`;
+}
+function chipStatic(p){return `<div class="pc">${fig(p,p.nb?"nb":"")}<span><b>${esc(p.n)}</b>${p.nb?`<i>nou-născut</i>`:""}${p.r.map(roleTag).join("")}</span></div>`;}
+function handHTML(p){
+  return `<section class="card pad"><h3>Cărțile tale de Soartă <span class="muted small">(${p.hand.length})</span></h3>
+  ${p.hand.length?`<div class="hand">${p.hand.map((k,i)=>{const c=FATE[k];return `<button class="fate" data-a="f-open" data-v="${k}"><div class="band"></div><b>${esc(c.t)}</b>${c.role?`<i>Rol</i>`:""}<p>${esc(c.d)}</p></button>`;}).join("")}</div>`:`<p class="muted small">Nu ai cărți. Le câștigi la licitație, le cumperi cu 2 Zestre sau le primești când dai o Mândră la nuntă.</p>`}</section>`;
+}
+function otherHTML(o){
+  const cs=coupleList(S,o.id),sg=singles(S,o.id);
+  return `<details class="card other"><summary><span class="oname">${esc(o.name)}${S.mayor===o.id?` <span class="tag">primar</span>`:""}</span><span class="ostats">${zIcon()}${o.z} ${lIcon()}${o.land} · ${cs.length} cupl. · ${sg.length} sing. · ${o.hand.length} cărți</span></summary>
+  <div class="peas">${cs.map(([a,b])=>`<div class="couple">${chipStatic(a)}${chipStatic(b)}</div>`).join("")}${sg.map(x=>`<div class="single">${chipStatic(x)}</div>`).join("")}</div></details>`;
+}
+function endHTML(){
+  const r=S.results||score(S);
+  return `<section class="card pad end"><p class="eyebrow">Vremurile Grele au trecut</p><h2>Câștigă ${esc(r[0].name)}</h2>
+  <table class="res"><thead><tr><th></th><th>Boier</th><th>Zestre</th><th>Pământ</th><th>Bonus</th><th>Total</th></tr></thead><tbody>
+  ${r.map((x,i)=>`<tr class="${x.id===ME?"me":""}"><td>${i+1}</td><td>${esc(x.name)}</td><td>${x.z}</td><td>${x.land}</td><td>${x.bonus?"+5":"–"}</td><td><b>${x.total}</b></td></tr>`).join("")}</tbody></table>
+  <p class="small muted">Bonusul de +5 îl ia boierul cu cele mai multe Cupluri, doar dacă nu e egalitate. La egalitate de Zestre câștigă cine are mai mulți țărani.</p>
+  <button class="btn" data-a="home">Înapoi la jocuri</button></section>`;
+}
+function rulesHTML(){return `<ol class="rl">
+<li><b>Vremuri.</b> Se întoarce o carte de Vremuri și se urmează ce scrie. Primele 3 ture sunt Vremuri Bune.</li>
+<li><b>Producție.</b> Fiecare Cuplu cu Pământ dă cu zarul: 1 → +1 Zestre și un copil, 2–3 → +2 și un copil, 4–5 → +2, 6 → +3. Cu 7 țărani singuri nu se mai fac copii.</li>
+<li><b>Licitație.</b> Se licitează o carte de Soartă. Cine dă mai mult o ia.</li>
+<li><b>Nunți și negocieri.</b> Mărită țăranii tăi cu ai altor boieri: o încercare costă 2 Zestre și reușește la 1–2 pe zar. Mândra merge la Fecior, iar boierul care a dat Mândra trage o carte de Soartă. Pământ 4 Z · Soartă 2 Z · Adopție 2 Z.</li>
+<li><b>Hrană.</b> Fiecare Cuplu sau țăran singur mănâncă 1. Un Pământ hrănește pe cineva, restul plătesc cu Zestre. Fără Zestre pierzi Pământ, apoi țăranii mor de foame. Ultimul Cuplu și ultimul Pământ nu se pierd niciodată.</li>
+<li><b>Final.</b> Zestre + 1 pentru fiecare Pământ + 5 pentru cele mai multe Cupluri.</li></ol>`;}
+
+/* ---------- sheets ---------- */
+function openSheet(st){SH=st;renderSheet();}
+function closeSheet(){SH=null;$("#sheet").hidden=true;$("#scrim").hidden=true;}
+function renderSheet(){
+  if(!SH)return;const el=$("#sheet");let h="";
+  if(SH.t==="w")h=wedSheet();else if(SH.t==="f")h=fateSheet();else if(SH.t==="g")h=giveSheet();
+  el.innerHTML=`<div class="grab"></div><button class="x" data-a="sh-x" aria-label="Închide">×</button>${h}`;el.hidden=false;$("#scrim").hidden=false;
+}
+function peasantGroups(filter,a,selSet){
+  return S.players.map(o=>{const list=peas(S,o.id).filter(filter);if(!list.length)return"";
+    return `<p class="grp">${esc(o.name)}${o.id===ME?" (tu)":""}</p><div class="chips">${list.map(p=>chip(p,{a,sel:selSet.has(p.id)})).join("")}</div>`;}).join("")||`<p class="muted small">Nu e niciun țăran potrivit.</p>`;
+}
+function wedSheet(){
+  const w=SH;const a=S.P[w.mine],b=S.P[w.theirs];
+  let h=`<h3>Propune o nuntă</h3><p class="lbl">1. Țăranul tău</p><div class="chips">${singles(S,ME).filter(canMarry).map(p=>chip(p,{a:"w-mine",sel:w.mine===p.id})).join("")||`<span class="muted small">Nu ai țărani singuri care se pot căsători.</span>`}</div>`;
+  if(a){h+=`<p class="lbl">2. Cu cine</p>`+peasantGroups(p=>p.o!==ME&&canMarry(p)&&(S.fl.ams||p.s!==a.s),"w-theirs",new Set([w.theirs]));}
+  if(a&&b){
+    const lauts=Object.values(S.P).filter(p=>hasRole(p,"lautar")&&p.id!==a.id&&p.id!==b.id);
+    const c=chance(S,a,b,[...w.laut]);
+    h+=`<p class="lbl">3. Cine plătește cele 2 Zestre</p><div class="seg wide">${[["split","Câte 1"],["me","Eu 2"],["them",esc(pname(S,b.o))+" 2"]].map(([k,t])=>`<button class="${w.pay===k?"on":""}" data-a="w-pay" data-v="${k}">${t}</button>`).join("")}</div>`;
+    if(lauts.length)h+=`<p class="lbl">Lăutari la nuntă <span class="muted small">(+1 fiecare; plata se negociază)</span></p><div class="chips">${lauts.map(p=>chip(p,{a:"w-laut",sel:w.laut.has(p.id)})).join("")}</div>`;
+    if(a.s===b.s)h+=`<p class="lbl">Cuplul rămâne la</p><div class="seg wide"><button class="${w.keep==="me"?"on":""}" data-a="w-keep" data-v="me">Mine</button><button class="${w.keep==="them"?"on":""}" data-a="w-keep" data-v="them">${esc(pname(S,b.o))}</button></div>`;
+    if(meP().suf)h+=`<label class="check"><input type="checkbox" id="wsuf" ${w.suf?"checked":""} data-a="w-suf"> Folosește Suflete pereche (sigur, gratis)</label>`;
+    h+=`<div class="odds"><span class="die">${w.suf?"✓":c}</span><span>${w.suf?"Nunta iese sigur.":c?`Reușește dacă pică 1${c>1?"–"+c:""} pe zar.`:"Șanse zero. Adaugă lăutari."}</span></div>
+    <button class="btn primary" data-a="w-send">Trimite propunerea lui ${esc(pname(S,b.o))}</button><p class="small muted">Zarul se dă când ${esc(pname(S,b.o))} acceptă.</p>`;
+  }
+  return h;
+}
+const NEED={
+  sfadit:[["p","peasant","Ce Cuplu se desparte?",p=>p.sp&&!lastCouple(S,p.o)]],
+  fura:[["p","peasant","Cu care Fecior de-al tău se mărită mireasa?",p=>p.o===ME&&p.s==="M"&&canMarry(p)]],
+  coasa:[["b","boier","De la cine iei 3 Zestre?",o=>o.id!==ME]],
+  luceafar:[["b","boier","Cine primește copilul din flori?",o=>true]],
+  matrapaz:[["b","boier","De la cine iei un Pământ?",o=>o.id!==ME&&o.land>1]],
+  schimb:[["p","peasant","Prima Mândră sau Nevastă",p=>p.s==="F"],["q","peasant","A doua Mândră sau Nevastă",p=>p.s==="F"]],
+  afara:[["p","peasant","Pe cine dai afară?",p=>p.o===ME&&!p.sp],["b","boier","La ce boier pleacă?",o=>o.id!==ME]],
+  dulau:[["p","peasant","Ce Bărbat însurat elimini?",p=>p.s==="M"&&p.sp&&!lastCouple(S,p.o)]],
+  birt:[["p","peasant","Ce Bărbat însurat elimini?",p=>p.s==="M"&&p.sp&&!lastCouple(S,p.o)]],
+  sexch:[["p","peasant","Cine își schimbă sexul?",p=>true]],
+  vinvremuri:[["c","choice","Ce faci?",[["scurt","Scurtez jocul cu o tură"],["lung","Lungesc jocul cu o tură"]]]],
+  descantec:[["o","order","Atinge cărțile în ordinea în care vrei să vină",null]]
+};
+function needsFor(k){return FATE[k].role?[["p","peasant","Pe ce țăran pui rolul?",p=>roleTargets(S,k).includes(p)]]:(NEED[k]||[]);}
+function fateSheet(){
+  const k=SH.k,c=FATE[k],x=SH.x;
+  let h=`<div class="fate big"><div class="band"></div><b>${esc(c.t)}</b>${c.role?`<i>Rol</i>`:""}<p>${esc(c.d)}</p></div>`;
+  const okPhase=c.any||S.phase==="neg";
+  if(!okPhase){return h+`<p class="muted">Cartea se poate juca în etapa de Nunți și negocieri.</p>`;}
+  let ready=true;
+  for(const [f,kind,label,flt] of needsFor(k)){
+    h+=`<p class="lbl">${esc(label)}</p>`;
+    if(kind==="peasant")h+=peasantGroups(flt,"f-pick:"+f,new Set([x[f]]));
+    else if(kind==="boier")h+=`<div class="grid2">${S.players.filter(flt).map(o=>`<button class="btn ${x[f]===o.id?"sel":""}" data-a="f-pick:${f}" data-v="${o.id}">${esc(o.name)}</button>`).join("")}</div>`;
+    else if(kind==="choice")h+=`<div class="grid2">${flt.map(([v,t])=>`<button class="btn ${x[f]===v?"sel":""}" data-a="f-pick:${f}" data-v="${v}">${t}</button>`).join("")}</div>`;
+    else if(kind==="order"){const n=Math.min(3,S.tdeck.length);const ord=x.o||[];
+      h+=`<div class="grid1">${S.tdeck.slice(0,n).map((t,i)=>{const pos=ord.indexOf(i);return `<button class="btn ${pos>=0?"sel":""}" data-a="f-ord" data-v="${i}">${pos>=0?`<span class="die sm">${pos+1}</span>`:""}${esc(TIMES[t].t)}</button>`;}).join("")}</div>`;
+      if(ord.length<n)ready=false;}
+    if(kind!=="order"&&x[f]==null)ready=false;
+  }
+  return h+`<button class="btn primary" data-a="f-send" ${ready?"":"disabled"}>Joacă ${esc(c.t)}</button>`;
+}
+function giveSheet(){
+  const g=SH,p=meP();
+  let h=`<h3>Dă Zestre sau Soartă</h3><p class="small muted">Pentru daruri, împrumuturi sau plata unui Lăutar. Pământul și țăranii nu se pot da.</p><p class="lbl">Cui?</p><div class="grid2">${others().map(o=>`<button class="btn ${g.to===o.id?"sel":""}" data-a="g-to" data-v="${o.id}">${esc(o.name)}</button>`).join("")}</div>`;
+  if(g.to){h+=`<p class="lbl">Zestre <span class="muted small">(ai ${p.z})</span></p><div class="grid3">${[1,2,3,4,5,10].filter(n=>n<=p.z).map(n=>`<button class="btn" data-a="g-z" data-v="${n}">Dă ${n}</button>`).join("")||`<span class="muted small">Nu ai Zestre.</span>`}</div>`;
+    if(p.hand.length)h+=`<p class="lbl">Sau o carte de Soartă</p><div class="grid2">${[...new Set(p.hand)].map(k=>`<button class="btn" data-a="g-c" data-v="${k}">${esc(FATE[k].t)}</button>`).join("")}</div>`;}
+  return h;
+}
+
+/* ---------- events ---------- */
+const H={
+  hard:v=>{hardSel=+v;document.querySelectorAll("#hardseg button").forEach(b=>b.classList.toggle("on",+b.dataset.v===hardSel));},
+  create:()=>createGame(),
+  join:v=>joinGame(v),
+  open:v=>openGame(v),
+  home:()=>{closeSheet();if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;view="lobby";render();},
+  leave:async()=>{const ok=await act(s=>{s.players=s.players.filter(p=>p.id!==ME);if(s.host===ME&&s.players.length)s.host=s.players[0].id;});if(ok)closeGame();},
+  start:()=>act(s=>startGame(s)),
+  t:v=>{const [a,x]=v.split(":");act(s=>tAct(s,ME,a,x||undefined));},
+  roll:v=>{const [k,val]=v.split(":");act(s=>prodRoll(s,ME,k,val||undefined));},
+  "prod-done":()=>act(s=>prodDone(s,ME)),
+  bid:v=>act(s=>bid(s,ME,v)),
+  pass:()=>act(s=>passBid(s,ME)),
+  buy:v=>act(s=>buy(s,ME,v)),
+  endturn:()=>act(s=>endNegTurn(s,ME)),
+  tm:v=>{const [k,x]=v.split(":");tmSel[k]=+x;document.querySelectorAll(`[data-tm="${k}"] button`).forEach(b=>b.classList.toggle("on",b.dataset.v===v));},
+  mute:()=>{muted=!muted;LS.set("zmute",muted?"1":"0");if(!muted){ac();SFX.coin();}render();},
+  "pop-x":()=>nextPop(),
+  "pop-card":v=>{nextPop();openSheet({t:"f",k:v,x:{}});},
+  chat:()=>{chatOpen=!chatOpen;renderChat();if(chatOpen)setTimeout(()=>$("#chatin")&&$("#chatin").focus(),50);},
+  "p-acc":v=>act(s=>acceptProp(s,ME,v)),
+  "p-dec":v=>act(s=>declineProp(s,ME,v)),
+  "p-can":()=>act(s=>cancelProp(s,ME)),
+  "w-open":()=>openSheet({t:"w",mine:null,theirs:null,pay:"split",laut:new Set(),keep:"me",suf:false}),
+  "w-mine":v=>{SH.mine=+v;SH.theirs=null;renderSheet();},
+  "w-theirs":v=>{SH.theirs=+v;renderSheet();},
+  "w-pay":v=>{SH.pay=v;renderSheet();},
+  "w-keep":v=>{SH.keep=v;renderSheet();},
+  "w-laut":v=>{v=+v;SH.laut.has(v)?SH.laut.delete(v):SH.laut.add(v);renderSheet();},
+  "w-send":async()=>{const w=SH;const ok=await act(s=>propose(s,ME,{mine:w.mine,theirs:w.theirs,pay:w.pay,laut:[...w.laut],keep:w.keep,suf:w.suf}));if(ok)closeSheet();},
+  "f-open":v=>openSheet({t:"f",k:v,x:{}}),
+  "f-ord":v=>{const o=SH.x.o||(SH.x.o=[]);v=+v;const i=o.indexOf(v);i>=0?o.splice(i,1):o.push(v);renderSheet();},
+  "f-send":async()=>{const f=SH;const ok=await act(s=>playFate(s,ME,f.k,f.x));if(ok)closeSheet();},
+  "g-open":()=>openSheet({t:"g",to:null}),
+  "g-to":v=>{SH.to=v;renderSheet();},
+  "g-z":async v=>{const ok=await act(s=>give(s,ME,SH.to,"z",v));if(ok)closeSheet();},
+  "g-c":async v=>{const ok=await act(s=>give(s,ME,SH.to,"f",v));if(ok)closeSheet();},
+  "sh-x":()=>closeSheet(),
+  force:()=>{if(!forceArm){forceArm=1;render();setTimeout(()=>{forceArm=0;render();},4000);return;}forceArm=0;act(s=>force(s));}
+};
+document.addEventListener("click",e=>{
+  if(e.target.id==="scrim"){closeSheet();return;}
+  const b=e.target.closest("[data-a]");if(!b||b.disabled)return;
+  const a=b.dataset.a;
+  if(a==="w-suf"){SH.suf=b.checked;renderSheet();return;}
+  if(a.startsWith("f-pick:")){const f=a.slice(7);let v=b.dataset.v;SH.x[f]=(f==="p"||f==="q")?+v:v;renderSheet();return;}
+  if(H[a]){e.preventDefault();H[a](b.dataset.v,b);}
+});
+$("#chatform").addEventListener("submit",e=>{e.preventDefault();sendChat();});
+boot();
+
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
+</body></html>
