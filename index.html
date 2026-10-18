@@ -276,6 +276,19 @@ body.quake #app{animation:quake .5s ease-in-out}
 .fxlayer{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
 .fxlayer.confetti i{position:absolute;top:0;width:9px;height:14px;border-radius:2px;animation:fall linear both}
 .fxlayer.rain i{position:absolute;top:0;width:2px;height:22px;border-radius:2px;background:linear-gradient(transparent,rgba(160,190,230,.85));animation:drop linear both}
+
+.tag.bot{background:rgba(44,77,107,.5);color:#b9d0e6}
+.seats .sname{flex:1;min-width:0}
+.rmbot{border:0;background:var(--raise);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.1rem;flex:none}
+.botrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.boardhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tablewrap{overflow-x:auto}
+.lb td:nth-child(2){font-weight:700}
+.medal{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font-weight:800;font-size:.8rem;color:#2a1610}
+.medal.m0{background:var(--ochre)}.medal.m1{background:#cfc6c0}.medal.m2{background:#c98a5b}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hist li{background:var(--ground);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.hh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 @media (max-width:380px){.grid3{grid-template-columns:1fr 1fr}.stats b{font-size:1.15rem}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -808,7 +821,7 @@ function playFate(s,me,key,x){
     case"suflete":if(p.suf)throw E("Ai deja efectul activ.");p.suf=true;log(s,`${p.name} își găsește sufletul pereche pentru următoarea nuntă.`);break;
     case"amsterdam":s.fl.ams=1;log(s,"Nunți la Amsterdam: tura asta oricine se poate căsători cu oricine.");break;
     case"tuica":p.z+=2*p.land;log(s,`${p.name} face țuică: +${2*p.land} Zestre.`);break;
-    case"schimb":{const a=PS(x.p),b=PS(x.q);if(a===b||a.s!=="F"||b.s!=="F")throw E("Alege două Mândre sau Neveste diferite.");
+    case"schimb":{const a=PS(x.p),b=PS(x.q);if(a===b||a.s!=="F"||b.s!=="F")throw E("Alege două Mândre sau Neveste diferite.");if(a.sp===b.id)throw E("Sunt deja căsătorite între ele.");
       const sa=a.sp,sb=b.sp,oa=a.o,ob=b.o;a.sp=sb;a.o=ob;b.sp=sa;b.o=oa;if(sb)s.P[sb].sp=a.id;if(sa)s.P[sa].sp=b.id;
       log(s,`Schimb de mame: ${a.n} și ${b.n} își schimbă locurile.`);break;}
     case"hora":s.fl.horaOn=1;log(s,`${p.name} organizează Hora mare: prima încercare de nuntă a fiecărei perechi e gratis.`);break;
@@ -878,6 +891,127 @@ function force(s){
 }
 function timeout(s){if(s.status!=="play"||!s.dl||Date.now()<s.dl)return false;return force(s);}
 if(typeof module!=="undefined")module.exports={timeout,endNegTurn,negCur,newGame,startGame,tAct,prodRoll,prodDone,bid,passBid,buy,give,propose,acceptProp,declineProp,cancelProp,readyNeg,playFate,force,productive,potopOptions,roleTargets,coupleList,singles,peas,canMarry,FATE,TIMES,score};
+
+/* ===== Bots: rule-based players. botStep makes at most one move and returns true if it did. ===== */
+const BOT_NAMES=["Moș Pătru","Coana Veta","Jupân Iancu","Baba Safta","Vornicul Stan","Chera Floarea","Logofătul Gică","Mătușa Tinca"];
+function addBot(s){
+  if(s.status!=="lobby")throw E("Boții se adaugă înainte de începerea jocului.");
+  if(s.players.length>=6)throw E("Masa e plină (6 boieri).");
+  const used=new Set(s.players.map(p=>p.name));const nm=BOT_NAMES.find(n=>!used.has(n))||("Bot "+(s.players.length+1));
+  const id="bot"+(++s.seq)+Math.random().toString(36).slice(2,5);
+  s.players.push({id,name:nm,bot:true,z:0,land:3,hand:[],ready:false,fix:false,suf:false});
+  log(s,`${nm} (bot) s-a așezat la masă.`);
+}
+function removeBot(s,id){const p=pl(s,id);if(!p||!p.bot)throw E("Nu e bot.");if(s.status!=="lobby")throw E("Jocul a început.");s.players=s.players.filter(q=>q.id!==id);}
+const isBot=(s,id)=>!!(pl(s,id)||{}).bot;
+function bmem(s,id){if(!s.bm||s.bm.t!==s.turn)s.bm={t:s.turn};return s.bm[id]||(s.bm[id]={tries:0,cards:0,buys:0});}
+function attempt(f){try{f();return true;}catch(e){if(!e.user)throw e;return false;}}
+function botStep(s,id){
+  const p=pl(s,id);if(!p||!p.bot||s.status!=="play")return false;
+  const ph=s.phase,k=s.tcur;
+  if(ph==="times"){
+    if(p.ready)return false;
+    const others=s.players.filter(q=>q.id!==id);
+    if(k==="colinda"){const t=others.slice().sort((a,b)=>b.z-a.z)[0];return attempt(()=>tAct(s,id,"colinda",t&&t.z>0?t.id:undefined));}
+    if(k==="foncirea")return attempt(()=>tAct(s,id,"foncirea"));
+    if(k==="potop"){const o=potopOptions(s,id);const pick=(p.land>2&&o.includes("L"))?"L":["M","F","L","C"].find(v=>o.includes(v));return attempt(()=>tAct(s,id,"potop",pick));}
+    if(k==="primar")return attempt(()=>tAct(s,id,"vote",id));
+    if(k==="pasalac"){return attempt(()=>tAct(s,id,"pasalac","F"))||attempt(()=>tAct(s,id,"pasalac","M"))||attempt(()=>{p.ready=true;tryAdvance(s);});}
+    return attempt(()=>tAct(s,id,"ready"));
+  }
+  if(ph==="prod"){
+    if(p.ready)return false;
+    const u=productive(s,id).find(x=>!s.ts.rolled[x.k]);
+    if(u)return attempt(()=>prodRoll(s,id,u.k));
+    return attempt(()=>prodDone(s,id));
+  }
+  if(ph==="auct"){
+    const a=s.auction;if(!a||a.passed[id]||a.by===id)return false;
+    const want=!s.last&&a.bid+1<=2&&p.z>=a.bid+3;
+    return want?attempt(()=>bid(s,id,a.bid+1)):attempt(()=>passBid(s,id));
+  }
+  if(ph==="neg"){
+    const m=bmem(s,id);
+    // answer proposals addressed to me
+    for(const [from,pr] of Object.entries(s.props)){
+      if(pr.to!==id)continue;const a=s.P[pr.mine],b=s.P[pr.theirs];
+      if(!a||!b)return attempt(()=>declineProp(s,id,from));
+      const c=pr.suf?6:chance(s,a,b,pr.laut);
+      const ok=c>=2&&(pr.pay!=="them"||p.z>=4)&&(pr.pay!=="split"||p.z>=2);
+      return ok?(attempt(()=>acceptProp(s,id,from))||attempt(()=>declineProp(s,id,from))):attempt(()=>declineProp(s,id,from));
+    }
+    // play a useful card (a few per turn)
+    if(m.cards<3&&p.hand.length){
+      for(const key of [...new Set(p.hand)]){
+        const x=botCardArgs(s,id,key);if(x===null)continue;
+        if(attempt(()=>playFate(s,id,key,x))){m.cards++;return true;}
+      }
+      m.cards=3;
+    }
+    // buy land when food is short and money allows
+    const fd=coupleList(s,id).length+singles(s,id).filter(q=>!q.nb).length;
+    if(m.buys<2&&p.land<5&&fd>p.land&&p.z>=6){m.buys++;if(attempt(()=>buy(s,id,"land")))return true;}
+    // propose a wedding
+    if(!s.props[id]&&m.tries<3&&p.z>=1){
+      const mine=singles(s,id).filter(canMarry);
+      for(const a of shuffle(mine.slice())){
+        const cand=Object.values(s.P).filter(b=>b.o!==id&&canMarry(b)&&(a.s!==b.s||s.fl.ams)&&!(s.props[b.o]&&s.props[b.o].to===id));
+        if(!cand.length)continue;
+        cand.sort((x,y)=>chance(s,a,y,[])-chance(s,a,x,[]));const b=cand[0];
+        if(chance(s,a,b,[])<1)continue;
+        m.tries++;
+        if(attempt(()=>propose(s,id,{mine:a.id,theirs:b.id,pay:p.z>=4?"me":"split",laut:botLaut(s,id,a,b),keep:"me",suf:p.suf})))return true;
+      }
+      m.tries=3;
+    }
+    if(!p.ready&&!Object.values(s.props).some(pr=>pr.to===id))return attempt(()=>readyNeg(s,id,true));
+    return false;
+  }
+  return false;
+}
+function botLaut(s,id,a,b){return Object.values(s.P).filter(q=>q.o===id&&hasRole(q,"lautar")&&q.id!==a.id&&q.id!==b.id).map(q=>q.id);}
+function botCardArgs(s,id,key){
+  const p=pl(s,id),c=FATE[key];const oth=s.players.filter(q=>q.id!==id);
+  const mine=Object.values(s.P).filter(q=>q.o===id),theirs=Object.values(s.P).filter(q=>q.o!==id);
+  const richest=oth.slice().sort((a,b)=>b.z-a.z)[0];
+  if(c.role){
+    const tg=roleTargets(s,key);
+    const bad=(c.m||0)<0;
+    let pick;
+    if(bad)pick=tg.find(q=>q.o!==id&&!q.sp);
+    else if(key==="vladic")pick=tg.find(q=>q.o===id&&!q.sp&&q.s==="M"&&singles(s,id).length>2);
+    else if(key==="mono")pick=tg.find(q=>q.o===id&&!q.sp&&!q.nb);
+    else pick=tg.find(q=>q.o===id);
+    return pick?{p:pick.id}:null;
+  }
+  switch(key){
+    case"tuica":return {};
+    case"tir":return singles(s,id).some(q=>q.s==="M")?{}:null;
+    case"murat":return singles(s,id).some(q=>q.s==="F")?{}:null;
+    case"coasa":return richest&&richest.z>0?{b:richest.id}:null;
+    case"luceafar":return singles(s,id).length<6?{b:id}:null;
+    case"matrapaz":{const t=oth.filter(q=>q.land>1).sort((a,b)=>b.land-a.land)[0];return t&&p.land<5?{b:t.id}:null;}
+    case"capra":return nbrs(s,id).some(q=>q.z>0)?{}:null;
+    case"lac":{const rich=s.players.filter(q=>q.z>=1);if(!rich.length)return null;const mn=Math.min(...rich.map(q=>q.z));return p.z>mn?{}:null;}
+    case"dulau":case"birt":{const t=theirs.find(q=>q.s==="M"&&q.sp&&!lastCouple(s,q.o));return t?{p:t.id}:null;}
+    case"sfadit":{const t=theirs.find(q=>q.sp&&!lastCouple(s,q.o));return t?{p:t.id}:null;}
+    case"calcat":return p.fix?null:{};
+    case"suflete":return p.suf?null:{};
+    case"bataie":return singles(s,id).filter(q=>!q.nb).length?{}:null;
+    case"hora":return {};
+    default:return null;
+  }
+}
+function botsPending(s){
+  if(s.status!=="play")return [];
+  return s.players.filter(p=>p.bot).filter(p=>{
+    if(s.phase==="times"||s.phase==="prod")return !p.ready;
+    if(s.phase==="auct")return s.auction&&!s.auction.passed[p.id]&&s.auction.by!==p.id;
+    if(s.phase==="neg")return !p.ready||Object.values(s.props).some(pr=>pr.to===p.id);
+    return false;}).map(p=>p.id);
+}
+function botTick(s){for(const id of shuffle(botsPending(s))){if(botStep(s,id))return true;}return false;}
+if(typeof module!=="undefined")Object.assign(module.exports,{addBot,removeBot,botStep,botTick,botsPending});
 </script>
 <script>/* ===== Zestrea UI ===== */
 const $=q=>document.querySelector(q);
@@ -992,6 +1126,43 @@ function nextPop(){
     <button class="btn primary" data-a="pop-x">Am înțeles</button></div>`;}
   el.innerHTML=h;el.hidden=false;
 }
+/* ---------- bots, results, leaderboard ---------- */
+let results=[],lbTab="rank",recorded=new Set(),botBusy=false;
+setInterval(async()=>{
+  if(botBusy||busy||view!=="game"||!S||S.status!=="play"||!isHost())return;
+  if(!botsPending(S).length)return;
+  botBusy=true;try{await act(s=>{if(!botTick(s))return false;},true);}finally{botBusy=false;}
+},1100);
+async function recordResult(){
+  if(!S||S.status!=="ended"||recorded.has(S.code))return;recorded.add(S.code);
+  const r=S.results||score(S);if(!r.length)return;
+  const doc={code:S.code,at:Date.now(),hard:S.hard||5,winner:r[0].name,
+    players:r.map(x=>({name:x.name,bot:!!(pl(S,x.id)||{}).bot,total:x.total,z:x.z,land:x.land,couples:x.couples}))};
+  try{const ref=db.doc("results/"+S.code);const ex=await ref.get();if(!ex.exists)await ref.set(doc);}catch(e){recorded.delete(S.code);}
+}
+function rankRows(){
+  const m={};
+  for(const g of results){
+    const top=Math.max(...g.players.map(p=>p.total));
+    for(const p of g.players){if(p.bot)continue;const k=String(p.name||"").trim().toLowerCase();if(!k)continue;
+      const r=m[k]||(m[k]={name:p.name,games:0,wins:0,best:0,sum:0});r.games++;r.sum+=p.total;r.best=Math.max(r.best,p.total);if(p.total===top&&p.name===g.winner)r.wins++;}
+  }
+  return Object.values(m).sort((a,b)=>b.wins-a.wins||(b.wins/b.games)-(a.wins/a.games)||b.best-a.best);
+}
+function renderBoard(){
+  const el=$("#board");if(!el)return;
+  document.querySelectorAll("#lbseg button").forEach(b=>b.classList.toggle("on",b.dataset.v===lbTab));
+  if(!results.length){el.innerHTML=`<p class="empty">Nicio partidă terminată încă. După primul joc, aici apare cine a strâns cea mai multă Zestre.</p>`;return;}
+  if(lbTab==="rank"){const rows=rankRows();
+    el.innerHTML=rows.length?`<div class="tablewrap"><table class="res lb"><thead><tr><th></th><th>Boier</th><th>Victorii</th><th>Partide</th><th>Record</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr class="${r.name===myName?"me":""}"><td>${i<3?`<span class="medal m${i}">${i+1}</span>`:i+1}</td><td>${esc(r.name)}</td><td><b>${r.wins}</b></td><td>${r.games}</td><td>${r.best}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted">Se numără doar boierii oameni, după nume. Scrie-ți numele la fel la fiecare joc.</p>`:`<p class="empty">Până acum au câștigat doar boții.</p>`;}
+  else{
+    el.innerHTML=`<ol class="hist">${results.slice(0,25).map(g=>{const d=new Date(g.at);
+      return `<li><div class="hh"><b>${esc(g.winner)}</b> a câștigat<span class="muted small">${d.toLocaleDateString("ro-RO",{day:"numeric",month:"short"})} · ${d.toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"})}</span></div>
+      <div class="small muted">${g.players.map(p=>`${esc(p.name)}${p.bot?" (bot)":""} ${p.total}`).join(" · ")}</div></li>`;}).join("")}</ol>`;}
+}
+
 /* ---------- animations ---------- */
 const reduceMotion=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}};
 function burst(kind){
@@ -1007,7 +1178,7 @@ function burst(kind){
 }
 let seenP=null,seenRoll=new Set(),animTurn=null,animAuct=null,prevStat=null,handSeen=null,openOthers=new Set();
 function afterRender(){
-  if(!S||S.status==="lobby")return;const p=meP();if(!p)return;
+  if(!S||S.status==="lobby")return;if(S.status==="ended")recordResult();const p=meP();if(!p)return;
   // floating +/- next to your Zestre and Land
   const st={z:p.z,land:p.land};
   if(prevStat&&prevStat.code===S.code){
@@ -1067,6 +1238,7 @@ async function boot(){
   ME=user?await user.id():null;
   if(!ME){ME=LS.get("zid")||("g"+Math.random().toString(36).slice(2,10));LS.set("zid",ME);}
   if(!myName&&user){const m=await user.me();myName=(m&&m.name)||"";}
+  db.collection("results").orderBy("at","desc").limit(300).onSnapshot(q=>{results=q.docs.map(d=>d.data()).filter(r=>r&&r.players);if(view==="lobby")renderBoard();},()=>{});
   db.collection("games").orderBy("created","desc").limit(25).onSnapshot(q=>{lobby=q.docs.map(d=>d.data());if(view==="lobby")renderLobbyList();},e=>toast("Lista de jocuri nu se poate încărca."));
   view="lobby";render();
   const last=LS.get("zcode");if(last)openGame(last,true);
@@ -1154,18 +1326,19 @@ function renderLobby(){
         <span class="muted small">5 e jocul normal, 6–7 îl lungesc</span></div>
       <p class="lbl">Cronometre</p>
       ${tmRow("turn","Pe tură",[[0,"Fără"],[20,"20 s"],[30,"30 s"],[45,"45 s"],[60,"1 min"]])}
-      ${tmRow("wed","Rândul la nunți",[[0,"Fără"],[60,"1 min"],[120,"2 min"],[180,"3 min"]])}
+      ${tmRow("wed","Etapa de nunți",[[0,"Fără"],[60,"1 min"],[120,"2 min"],[180,"3 min"]])}
       ${tmRow("auct","Licitație",[[0,"Fără"],[10,"10 s"],[20,"20 s"],[30,"30 s"]])}
-      <p class="small muted">Când expiră timpul, jocul trece mai departe singur: se aruncă zarurile rămase, licitația se încheie, rândul trece la următorul boier.</p>
+      <p class="small muted">Când expiră timpul, jocul trece mai departe singur: se aruncă zarurile rămase, licitația se încheie, iar după nunți urmează Hrana.</p>
       <button class="btn primary" data-a="create">Deschide un joc nou</button>
     </section>
     <h3 class="sect">Jocuri deschise</h3>
     <div id="list"></div>
+    <section class="card pad board"><div class="boardhead"><h3>Clasament</h3><div class="seg" id="lbseg"><button data-a="lb" data-v="rank">Boieri</button><button data-a="lb" data-v="hist">Istoric</button></div></div><div id="board"></div></section>
     <details class="card pad rules"><summary>Reguli pe scurt</summary>${rulesHTML()}</details>
     </div>`;
     $("#nm").addEventListener("input",e=>{myName=e.target.value.trim();LS.set("zname",myName);});
   }
-  renderLobbyList();
+  renderLobbyList();renderBoard();
 }
 function renderLobbyList(){
   const el=$("#list");if(!el)return;
@@ -1208,9 +1381,10 @@ function renderRoom(){
   <section class="card pad stack">
     <h2>Masa ${esc(S.code)}</h2>
     <p class="muted">Prietenii deschid aceeași pagină și apasă „Intră” la jocul ${esc(S.code)}. Se joacă cu ${S.hard} Vremuri Grele.</p>
-    <p class="small">Cronometre: tură ${tmTxt((S.tm||{}).turn)} · rândul la nunți ${tmTxt((S.tm||{}).wed)} · licitație ${tmTxt((S.tm||{}).auct)}</p>
-    <p class="small muted">Ordinea la masă se trage la începutul jocului și rămâne aceeași până la final, în sensul acelor de ceasornic.</p>
-    <ul class="seats">${S.players.map((p,i)=>`<li><span class="seatn">${i+1}</span>${esc(p.name)}${p.id===S.host?` <span class="tag">gazdă</span>`:""}${p.id===ME?` <span class="tag pos">tu</span>`:""}</li>`).join("")}</ul>
+    <p class="small">Cronometre: tură ${tmTxt((S.tm||{}).turn)} · etapa de nunți ${tmTxt((S.tm||{}).wed)} · licitație ${tmTxt((S.tm||{}).auct)}</p>
+    <p class="small muted">Ordinea la masă se trage la începutul jocului. Boții joacă de pe telefonul gazdei, așa că gazda trebuie să rămână în aplicație.</p>
+    <ul class="seats">${S.players.map((p,i)=>`<li><span class="seatn">${i+1}</span><span class="sname">${esc(p.name)}${p.bot?` <span class="tag bot">bot</span>`:""}${p.id===S.host?` <span class="tag">gazdă</span>`:""}${p.id===ME?` <span class="tag pos">tu</span>`:""}</span>${p.bot&&isHost()?`<button class="rmbot" data-a="rmbot" data-v="${esc(p.id)}" aria-label="Scoate botul">×</button>`:""}</li>`).join("")}</ul>
+    ${isHost()?`<div class="botrow"><button class="btn" data-a="addbot" ${n>=6?"disabled":""}>+ Adaugă un bot</button><span class="small muted">${n>=6?"Masa e plină.":`Mai sunt ${6-n} ${6-n===1?"loc":"locuri"}. Boții joacă singuri, după reguli.`}</span></div>`:""}
     ${isHost()?`<button class="btn primary" data-a="start" ${n<2?"disabled":""}>Începe jocul (${n} ${n===1?"boier":"boieri"})</button>${n<3?`<p class="small muted">Regulile sunt gândite pentru 3–6 boieri. Cu 2 se poate testa.</p>`:""}`:`<p class="waiting">Așteptăm ca ${esc(pname(S,S.host))} să înceapă jocul…</p>`}
     <button class="btn ghost" data-a="leave">Ieși de la masă</button>
   </section>`;
@@ -1337,7 +1511,7 @@ function handHTML(p){
 }
 function otherHTML(o){
   const cs=coupleList(S,o.id),sg=singles(S,o.id);
-  return `<details class="card other" data-o="${esc(o.id)}" ${openOthers.has(o.id)?"open":""}><summary><span class="oname">${esc(o.name)}${S.mayor===o.id?` <span class="tag">primar</span>`:""}</span><span class="ostats">${zIcon()}${o.z} ${lIcon()}${o.land} · ${cs.length} cupl. · ${sg.length} sing. · ${o.hand.length} cărți</span></summary>
+  return `<details class="card other" data-o="${esc(o.id)}" ${openOthers.has(o.id)?"open":""}><summary><span class="oname">${esc(o.name)}${o.bot?` <span class="tag bot">bot</span>`:""}${S.mayor===o.id?` <span class="tag">primar</span>`:""}</span><span class="ostats">${zIcon()}${o.z} ${lIcon()}${o.land} · ${cs.length} cupl. · ${sg.length} sing. · ${o.hand.length} cărți</span></summary>
   <div class="peas">${cs.map(([a,b])=>`<div class="couple">${chipStatic(a)}${chipStatic(b)}</div>`).join("")}${sg.map(x=>`<div class="single">${chipStatic(x)}</div>`).join("")}</div></details>`;
 }
 function endHTML(){
@@ -1434,6 +1608,9 @@ const H={
   home:()=>{closeSheet();if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;view="lobby";render();},
   leave:async()=>{const ok=await act(s=>{s.players=s.players.filter(p=>p.id!==ME);if(s.host===ME&&s.players.length)s.host=s.players[0].id;});if(ok)closeGame();},
   start:()=>act(s=>startGame(s)),
+  addbot:()=>act(s=>addBot(s)),
+  rmbot:v=>act(s=>removeBot(s,v)),
+  lb:v=>{lbTab=v;renderBoard();},
   t:v=>{const [a,x]=v.split(":");act(s=>tAct(s,ME,a,x||undefined));},
   roll:v=>{const [k,val]=v.split(":");act(s=>prodRoll(s,ME,k,val||undefined));},
   "prod-done":()=>act(s=>prodDone(s,ME)),

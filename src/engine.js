@@ -448,7 +448,7 @@ function playFate(s,me,key,x){
     case"suflete":if(p.suf)throw E("Ai deja efectul activ.");p.suf=true;log(s,`${p.name} își găsește sufletul pereche pentru următoarea nuntă.`);break;
     case"amsterdam":s.fl.ams=1;log(s,"Nunți la Amsterdam: tura asta oricine se poate căsători cu oricine.");break;
     case"tuica":p.z+=2*p.land;log(s,`${p.name} face țuică: +${2*p.land} Zestre.`);break;
-    case"schimb":{const a=PS(x.p),b=PS(x.q);if(a===b||a.s!=="F"||b.s!=="F")throw E("Alege două Mândre sau Neveste diferite.");
+    case"schimb":{const a=PS(x.p),b=PS(x.q);if(a===b||a.s!=="F"||b.s!=="F")throw E("Alege două Mândre sau Neveste diferite.");if(a.sp===b.id)throw E("Sunt deja căsătorite între ele.");
       const sa=a.sp,sb=b.sp,oa=a.o,ob=b.o;a.sp=sb;a.o=ob;b.sp=sa;b.o=oa;if(sb)s.P[sb].sp=a.id;if(sa)s.P[sa].sp=b.id;
       log(s,`Schimb de mame: ${a.n} și ${b.n} își schimbă locurile.`);break;}
     case"hora":s.fl.horaOn=1;log(s,`${p.name} organizează Hora mare: prima încercare de nuntă a fiecărei perechi e gratis.`);break;
@@ -518,3 +518,124 @@ function force(s){
 }
 function timeout(s){if(s.status!=="play"||!s.dl||Date.now()<s.dl)return false;return force(s);}
 if(typeof module!=="undefined")module.exports={timeout,endNegTurn,negCur,newGame,startGame,tAct,prodRoll,prodDone,bid,passBid,buy,give,propose,acceptProp,declineProp,cancelProp,readyNeg,playFate,force,productive,potopOptions,roleTargets,coupleList,singles,peas,canMarry,FATE,TIMES,score};
+
+/* ===== Bots: rule-based players. botStep makes at most one move and returns true if it did. ===== */
+const BOT_NAMES=["Moș Pătru","Coana Veta","Jupân Iancu","Baba Safta","Vornicul Stan","Chera Floarea","Logofătul Gică","Mătușa Tinca"];
+function addBot(s){
+  if(s.status!=="lobby")throw E("Boții se adaugă înainte de începerea jocului.");
+  if(s.players.length>=6)throw E("Masa e plină (6 boieri).");
+  const used=new Set(s.players.map(p=>p.name));const nm=BOT_NAMES.find(n=>!used.has(n))||("Bot "+(s.players.length+1));
+  const id="bot"+(++s.seq)+Math.random().toString(36).slice(2,5);
+  s.players.push({id,name:nm,bot:true,z:0,land:3,hand:[],ready:false,fix:false,suf:false});
+  log(s,`${nm} (bot) s-a așezat la masă.`);
+}
+function removeBot(s,id){const p=pl(s,id);if(!p||!p.bot)throw E("Nu e bot.");if(s.status!=="lobby")throw E("Jocul a început.");s.players=s.players.filter(q=>q.id!==id);}
+const isBot=(s,id)=>!!(pl(s,id)||{}).bot;
+function bmem(s,id){if(!s.bm||s.bm.t!==s.turn)s.bm={t:s.turn};return s.bm[id]||(s.bm[id]={tries:0,cards:0,buys:0});}
+function attempt(f){try{f();return true;}catch(e){if(!e.user)throw e;return false;}}
+function botStep(s,id){
+  const p=pl(s,id);if(!p||!p.bot||s.status!=="play")return false;
+  const ph=s.phase,k=s.tcur;
+  if(ph==="times"){
+    if(p.ready)return false;
+    const others=s.players.filter(q=>q.id!==id);
+    if(k==="colinda"){const t=others.slice().sort((a,b)=>b.z-a.z)[0];return attempt(()=>tAct(s,id,"colinda",t&&t.z>0?t.id:undefined));}
+    if(k==="foncirea")return attempt(()=>tAct(s,id,"foncirea"));
+    if(k==="potop"){const o=potopOptions(s,id);const pick=(p.land>2&&o.includes("L"))?"L":["M","F","L","C"].find(v=>o.includes(v));return attempt(()=>tAct(s,id,"potop",pick));}
+    if(k==="primar")return attempt(()=>tAct(s,id,"vote",id));
+    if(k==="pasalac"){return attempt(()=>tAct(s,id,"pasalac","F"))||attempt(()=>tAct(s,id,"pasalac","M"))||attempt(()=>{p.ready=true;tryAdvance(s);});}
+    return attempt(()=>tAct(s,id,"ready"));
+  }
+  if(ph==="prod"){
+    if(p.ready)return false;
+    const u=productive(s,id).find(x=>!s.ts.rolled[x.k]);
+    if(u)return attempt(()=>prodRoll(s,id,u.k));
+    return attempt(()=>prodDone(s,id));
+  }
+  if(ph==="auct"){
+    const a=s.auction;if(!a||a.passed[id]||a.by===id)return false;
+    const want=!s.last&&a.bid+1<=2&&p.z>=a.bid+3;
+    return want?attempt(()=>bid(s,id,a.bid+1)):attempt(()=>passBid(s,id));
+  }
+  if(ph==="neg"){
+    const m=bmem(s,id);
+    // answer proposals addressed to me
+    for(const [from,pr] of Object.entries(s.props)){
+      if(pr.to!==id)continue;const a=s.P[pr.mine],b=s.P[pr.theirs];
+      if(!a||!b)return attempt(()=>declineProp(s,id,from));
+      const c=pr.suf?6:chance(s,a,b,pr.laut);
+      const ok=c>=2&&(pr.pay!=="them"||p.z>=4)&&(pr.pay!=="split"||p.z>=2);
+      return ok?(attempt(()=>acceptProp(s,id,from))||attempt(()=>declineProp(s,id,from))):attempt(()=>declineProp(s,id,from));
+    }
+    // play a useful card (a few per turn)
+    if(m.cards<3&&p.hand.length){
+      for(const key of [...new Set(p.hand)]){
+        const x=botCardArgs(s,id,key);if(x===null)continue;
+        if(attempt(()=>playFate(s,id,key,x))){m.cards++;return true;}
+      }
+      m.cards=3;
+    }
+    // buy land when food is short and money allows
+    const fd=coupleList(s,id).length+singles(s,id).filter(q=>!q.nb).length;
+    if(m.buys<2&&p.land<5&&fd>p.land&&p.z>=6){m.buys++;if(attempt(()=>buy(s,id,"land")))return true;}
+    // propose a wedding
+    if(!s.props[id]&&m.tries<3&&p.z>=1){
+      const mine=singles(s,id).filter(canMarry);
+      for(const a of shuffle(mine.slice())){
+        const cand=Object.values(s.P).filter(b=>b.o!==id&&canMarry(b)&&(a.s!==b.s||s.fl.ams)&&!(s.props[b.o]&&s.props[b.o].to===id));
+        if(!cand.length)continue;
+        cand.sort((x,y)=>chance(s,a,y,[])-chance(s,a,x,[]));const b=cand[0];
+        if(chance(s,a,b,[])<1)continue;
+        m.tries++;
+        if(attempt(()=>propose(s,id,{mine:a.id,theirs:b.id,pay:p.z>=4?"me":"split",laut:botLaut(s,id,a,b),keep:"me",suf:p.suf})))return true;
+      }
+      m.tries=3;
+    }
+    if(!p.ready&&!Object.values(s.props).some(pr=>pr.to===id))return attempt(()=>readyNeg(s,id,true));
+    return false;
+  }
+  return false;
+}
+function botLaut(s,id,a,b){return Object.values(s.P).filter(q=>q.o===id&&hasRole(q,"lautar")&&q.id!==a.id&&q.id!==b.id).map(q=>q.id);}
+function botCardArgs(s,id,key){
+  const p=pl(s,id),c=FATE[key];const oth=s.players.filter(q=>q.id!==id);
+  const mine=Object.values(s.P).filter(q=>q.o===id),theirs=Object.values(s.P).filter(q=>q.o!==id);
+  const richest=oth.slice().sort((a,b)=>b.z-a.z)[0];
+  if(c.role){
+    const tg=roleTargets(s,key);
+    const bad=(c.m||0)<0;
+    let pick;
+    if(bad)pick=tg.find(q=>q.o!==id&&!q.sp);
+    else if(key==="vladic")pick=tg.find(q=>q.o===id&&!q.sp&&q.s==="M"&&singles(s,id).length>2);
+    else if(key==="mono")pick=tg.find(q=>q.o===id&&!q.sp&&!q.nb);
+    else pick=tg.find(q=>q.o===id);
+    return pick?{p:pick.id}:null;
+  }
+  switch(key){
+    case"tuica":return {};
+    case"tir":return singles(s,id).some(q=>q.s==="M")?{}:null;
+    case"murat":return singles(s,id).some(q=>q.s==="F")?{}:null;
+    case"coasa":return richest&&richest.z>0?{b:richest.id}:null;
+    case"luceafar":return singles(s,id).length<6?{b:id}:null;
+    case"matrapaz":{const t=oth.filter(q=>q.land>1).sort((a,b)=>b.land-a.land)[0];return t&&p.land<5?{b:t.id}:null;}
+    case"capra":return nbrs(s,id).some(q=>q.z>0)?{}:null;
+    case"lac":{const rich=s.players.filter(q=>q.z>=1);if(!rich.length)return null;const mn=Math.min(...rich.map(q=>q.z));return p.z>mn?{}:null;}
+    case"dulau":case"birt":{const t=theirs.find(q=>q.s==="M"&&q.sp&&!lastCouple(s,q.o));return t?{p:t.id}:null;}
+    case"sfadit":{const t=theirs.find(q=>q.sp&&!lastCouple(s,q.o));return t?{p:t.id}:null;}
+    case"calcat":return p.fix?null:{};
+    case"suflete":return p.suf?null:{};
+    case"bataie":return singles(s,id).filter(q=>!q.nb).length?{}:null;
+    case"hora":return {};
+    default:return null;
+  }
+}
+function botsPending(s){
+  if(s.status!=="play")return [];
+  return s.players.filter(p=>p.bot).filter(p=>{
+    if(s.phase==="times"||s.phase==="prod")return !p.ready;
+    if(s.phase==="auct")return s.auction&&!s.auction.passed[p.id]&&s.auction.by!==p.id;
+    if(s.phase==="neg")return !p.ready||Object.values(s.props).some(pr=>pr.to===p.id);
+    return false;}).map(p=>p.id);
+}
+function botTick(s){for(const id of shuffle(botsPending(s))){if(botStep(s,id))return true;}return false;}
+if(typeof module!=="undefined")Object.assign(module.exports,{addBot,removeBot,botStep,botTick,botsPending});

@@ -111,6 +111,43 @@ function nextPop(){
     <button class="btn primary" data-a="pop-x">Am înțeles</button></div>`;}
   el.innerHTML=h;el.hidden=false;
 }
+/* ---------- bots, results, leaderboard ---------- */
+let results=[],lbTab="rank",recorded=new Set(),botBusy=false;
+setInterval(async()=>{
+  if(botBusy||busy||view!=="game"||!S||S.status!=="play"||!isHost())return;
+  if(!botsPending(S).length)return;
+  botBusy=true;try{await act(s=>{if(!botTick(s))return false;},true);}finally{botBusy=false;}
+},1100);
+async function recordResult(){
+  if(!S||S.status!=="ended"||recorded.has(S.code))return;recorded.add(S.code);
+  const r=S.results||score(S);if(!r.length)return;
+  const doc={code:S.code,at:Date.now(),hard:S.hard||5,winner:r[0].name,
+    players:r.map(x=>({name:x.name,bot:!!(pl(S,x.id)||{}).bot,total:x.total,z:x.z,land:x.land,couples:x.couples}))};
+  try{const ref=db.doc("results/"+S.code);const ex=await ref.get();if(!ex.exists)await ref.set(doc);}catch(e){recorded.delete(S.code);}
+}
+function rankRows(){
+  const m={};
+  for(const g of results){
+    const top=Math.max(...g.players.map(p=>p.total));
+    for(const p of g.players){if(p.bot)continue;const k=String(p.name||"").trim().toLowerCase();if(!k)continue;
+      const r=m[k]||(m[k]={name:p.name,games:0,wins:0,best:0,sum:0});r.games++;r.sum+=p.total;r.best=Math.max(r.best,p.total);if(p.total===top&&p.name===g.winner)r.wins++;}
+  }
+  return Object.values(m).sort((a,b)=>b.wins-a.wins||(b.wins/b.games)-(a.wins/a.games)||b.best-a.best);
+}
+function renderBoard(){
+  const el=$("#board");if(!el)return;
+  document.querySelectorAll("#lbseg button").forEach(b=>b.classList.toggle("on",b.dataset.v===lbTab));
+  if(!results.length){el.innerHTML=`<p class="empty">Nicio partidă terminată încă. După primul joc, aici apare cine a strâns cea mai multă Zestre.</p>`;return;}
+  if(lbTab==="rank"){const rows=rankRows();
+    el.innerHTML=rows.length?`<div class="tablewrap"><table class="res lb"><thead><tr><th></th><th>Boier</th><th>Victorii</th><th>Partide</th><th>Record</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr class="${r.name===myName?"me":""}"><td>${i<3?`<span class="medal m${i}">${i+1}</span>`:i+1}</td><td>${esc(r.name)}</td><td><b>${r.wins}</b></td><td>${r.games}</td><td>${r.best}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted">Se numără doar boierii oameni, după nume. Scrie-ți numele la fel la fiecare joc.</p>`:`<p class="empty">Până acum au câștigat doar boții.</p>`;}
+  else{
+    el.innerHTML=`<ol class="hist">${results.slice(0,25).map(g=>{const d=new Date(g.at);
+      return `<li><div class="hh"><b>${esc(g.winner)}</b> a câștigat<span class="muted small">${d.toLocaleDateString("ro-RO",{day:"numeric",month:"short"})} · ${d.toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"})}</span></div>
+      <div class="small muted">${g.players.map(p=>`${esc(p.name)}${p.bot?" (bot)":""} ${p.total}`).join(" · ")}</div></li>`;}).join("")}</ol>`;}
+}
+
 /* ---------- animations ---------- */
 const reduceMotion=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}};
 function burst(kind){
@@ -126,7 +163,7 @@ function burst(kind){
 }
 let seenP=null,seenRoll=new Set(),animTurn=null,animAuct=null,prevStat=null,handSeen=null,openOthers=new Set();
 function afterRender(){
-  if(!S||S.status==="lobby")return;const p=meP();if(!p)return;
+  if(!S||S.status==="lobby")return;if(S.status==="ended")recordResult();const p=meP();if(!p)return;
   // floating +/- next to your Zestre and Land
   const st={z:p.z,land:p.land};
   if(prevStat&&prevStat.code===S.code){
@@ -186,6 +223,7 @@ async function boot(){
   ME=user?await user.id():null;
   if(!ME){ME=LS.get("zid")||("g"+Math.random().toString(36).slice(2,10));LS.set("zid",ME);}
   if(!myName&&user){const m=await user.me();myName=(m&&m.name)||"";}
+  db.collection("results").orderBy("at","desc").limit(300).onSnapshot(q=>{results=q.docs.map(d=>d.data()).filter(r=>r&&r.players);if(view==="lobby")renderBoard();},()=>{});
   db.collection("games").orderBy("created","desc").limit(25).onSnapshot(q=>{lobby=q.docs.map(d=>d.data());if(view==="lobby")renderLobbyList();},e=>toast("Lista de jocuri nu se poate încărca."));
   view="lobby";render();
   const last=LS.get("zcode");if(last)openGame(last,true);
@@ -273,18 +311,19 @@ function renderLobby(){
         <span class="muted small">5 e jocul normal, 6–7 îl lungesc</span></div>
       <p class="lbl">Cronometre</p>
       ${tmRow("turn","Pe tură",[[0,"Fără"],[20,"20 s"],[30,"30 s"],[45,"45 s"],[60,"1 min"]])}
-      ${tmRow("wed","Rândul la nunți",[[0,"Fără"],[60,"1 min"],[120,"2 min"],[180,"3 min"]])}
+      ${tmRow("wed","Etapa de nunți",[[0,"Fără"],[60,"1 min"],[120,"2 min"],[180,"3 min"]])}
       ${tmRow("auct","Licitație",[[0,"Fără"],[10,"10 s"],[20,"20 s"],[30,"30 s"]])}
-      <p class="small muted">Când expiră timpul, jocul trece mai departe singur: se aruncă zarurile rămase, licitația se încheie, rândul trece la următorul boier.</p>
+      <p class="small muted">Când expiră timpul, jocul trece mai departe singur: se aruncă zarurile rămase, licitația se încheie, iar după nunți urmează Hrana.</p>
       <button class="btn primary" data-a="create">Deschide un joc nou</button>
     </section>
     <h3 class="sect">Jocuri deschise</h3>
     <div id="list"></div>
+    <section class="card pad board"><div class="boardhead"><h3>Clasament</h3><div class="seg" id="lbseg"><button data-a="lb" data-v="rank">Boieri</button><button data-a="lb" data-v="hist">Istoric</button></div></div><div id="board"></div></section>
     <details class="card pad rules"><summary>Reguli pe scurt</summary>${rulesHTML()}</details>
     </div>`;
     $("#nm").addEventListener("input",e=>{myName=e.target.value.trim();LS.set("zname",myName);});
   }
-  renderLobbyList();
+  renderLobbyList();renderBoard();
 }
 function renderLobbyList(){
   const el=$("#list");if(!el)return;
@@ -327,9 +366,10 @@ function renderRoom(){
   <section class="card pad stack">
     <h2>Masa ${esc(S.code)}</h2>
     <p class="muted">Prietenii deschid aceeași pagină și apasă „Intră” la jocul ${esc(S.code)}. Se joacă cu ${S.hard} Vremuri Grele.</p>
-    <p class="small">Cronometre: tură ${tmTxt((S.tm||{}).turn)} · rândul la nunți ${tmTxt((S.tm||{}).wed)} · licitație ${tmTxt((S.tm||{}).auct)}</p>
-    <p class="small muted">Ordinea la masă se trage la începutul jocului și rămâne aceeași până la final, în sensul acelor de ceasornic.</p>
-    <ul class="seats">${S.players.map((p,i)=>`<li><span class="seatn">${i+1}</span>${esc(p.name)}${p.id===S.host?` <span class="tag">gazdă</span>`:""}${p.id===ME?` <span class="tag pos">tu</span>`:""}</li>`).join("")}</ul>
+    <p class="small">Cronometre: tură ${tmTxt((S.tm||{}).turn)} · etapa de nunți ${tmTxt((S.tm||{}).wed)} · licitație ${tmTxt((S.tm||{}).auct)}</p>
+    <p class="small muted">Ordinea la masă se trage la începutul jocului. Boții joacă de pe telefonul gazdei, așa că gazda trebuie să rămână în aplicație.</p>
+    <ul class="seats">${S.players.map((p,i)=>`<li><span class="seatn">${i+1}</span><span class="sname">${esc(p.name)}${p.bot?` <span class="tag bot">bot</span>`:""}${p.id===S.host?` <span class="tag">gazdă</span>`:""}${p.id===ME?` <span class="tag pos">tu</span>`:""}</span>${p.bot&&isHost()?`<button class="rmbot" data-a="rmbot" data-v="${esc(p.id)}" aria-label="Scoate botul">×</button>`:""}</li>`).join("")}</ul>
+    ${isHost()?`<div class="botrow"><button class="btn" data-a="addbot" ${n>=6?"disabled":""}>+ Adaugă un bot</button><span class="small muted">${n>=6?"Masa e plină.":`Mai sunt ${6-n} ${6-n===1?"loc":"locuri"}. Boții joacă singuri, după reguli.`}</span></div>`:""}
     ${isHost()?`<button class="btn primary" data-a="start" ${n<2?"disabled":""}>Începe jocul (${n} ${n===1?"boier":"boieri"})</button>${n<3?`<p class="small muted">Regulile sunt gândite pentru 3–6 boieri. Cu 2 se poate testa.</p>`:""}`:`<p class="waiting">Așteptăm ca ${esc(pname(S,S.host))} să înceapă jocul…</p>`}
     <button class="btn ghost" data-a="leave">Ieși de la masă</button>
   </section>`;
@@ -456,7 +496,7 @@ function handHTML(p){
 }
 function otherHTML(o){
   const cs=coupleList(S,o.id),sg=singles(S,o.id);
-  return `<details class="card other" data-o="${esc(o.id)}" ${openOthers.has(o.id)?"open":""}><summary><span class="oname">${esc(o.name)}${S.mayor===o.id?` <span class="tag">primar</span>`:""}</span><span class="ostats">${zIcon()}${o.z} ${lIcon()}${o.land} · ${cs.length} cupl. · ${sg.length} sing. · ${o.hand.length} cărți</span></summary>
+  return `<details class="card other" data-o="${esc(o.id)}" ${openOthers.has(o.id)?"open":""}><summary><span class="oname">${esc(o.name)}${o.bot?` <span class="tag bot">bot</span>`:""}${S.mayor===o.id?` <span class="tag">primar</span>`:""}</span><span class="ostats">${zIcon()}${o.z} ${lIcon()}${o.land} · ${cs.length} cupl. · ${sg.length} sing. · ${o.hand.length} cărți</span></summary>
   <div class="peas">${cs.map(([a,b])=>`<div class="couple">${chipStatic(a)}${chipStatic(b)}</div>`).join("")}${sg.map(x=>`<div class="single">${chipStatic(x)}</div>`).join("")}</div></details>`;
 }
 function endHTML(){
@@ -553,6 +593,9 @@ const H={
   home:()=>{closeSheet();if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;view="lobby";render();},
   leave:async()=>{const ok=await act(s=>{s.players=s.players.filter(p=>p.id!==ME);if(s.host===ME&&s.players.length)s.host=s.players[0].id;});if(ok)closeGame();},
   start:()=>act(s=>startGame(s)),
+  addbot:()=>act(s=>addBot(s)),
+  rmbot:v=>act(s=>removeBot(s,v)),
+  lb:v=>{lbTab=v;renderBoard();},
   t:v=>{const [a,x]=v.split(":");act(s=>tAct(s,ME,a,x||undefined));},
   roll:v=>{const [k,val]=v.split(":");act(s=>prodRoll(s,ME,k,val||undefined));},
   "prod-done":()=>act(s=>prodDone(s,ME)),
