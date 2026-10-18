@@ -118,7 +118,7 @@ function birth(s,o,count){
   const out=[];
   for(let i=0;i<count;i++){
     if(!canChild(s,o))break;
-    const c=drawP(s,o,true);if(!c)break;out.push(c);
+    const c=drawP(s,o,true);if(!c)break;out.push(c);fx(s,"born",o);
     if(peas(s,o).some(p=>hasRole(p,"moasa")))pl(s,o).z+=1;
   }
   return out;
@@ -282,6 +282,7 @@ function tryAdvance(s){
     if(s.tcur==="primar")tallyMayor(s);
     enterProd(s);
   }else if(s.phase==="prod")enterAuct(s);
+  else if(s.phase==="neg")feedAndNext(s);
 }
 function tallyMayor(s){
   const w={};Object.entries(s.ts.votes||{}).forEach(([v,c])=>{w[c]=(w[c]||0)+peas(s,v).length;});
@@ -335,8 +336,8 @@ function checkAuct(s){
 }
 function forceAuct(s){s.players.forEach(p=>{if(p.id!==s.auction.by)s.auction.passed[p.id]=1;});checkAuct(s);}
 function enterNeg(s){s.phase="neg";s.players.forEach(p=>p.ready=false);s.lastW=null;s.props={};
-  s.negStart=(s.turn-1)%s.players.length;s.negI=0;setDL(s,(s.tm||{}).wed);fx(s,"neg");fx(s,"turn",negCur(s));
-  log(s,`Nunți și negocieri: începe ${pname(s,negCur(s))}.`);}
+  s.negStart=0;s.negI=0;setDL(s,(s.tm||{}).wed);fx(s,"neg");
+  log(s,"Nunți și negocieri: toți boierii pot propune nunți.");}
 function advanceNeg(s){
   const cur=negCur(s);delete s.props[cur];s.negI++;
   if(s.negI>=s.players.length)return feedAndNext(s);
@@ -375,10 +376,11 @@ function validPair(s,me,mine,theirs){
   return [a,b];
 }
 function propose(s,me,o){
-  needNeg(s);if(negCur(s)!==me)throw E(`Nu e rândul tău. Acum propune ${pname(s,negCur(s))}.`);
+  needNeg(s);
   const [a,b]=validPair(s,me,o.mine,o.theirs);const p=pl(s,me);
   if(o.suf&&!p.suf)throw E("Nu ai Suflete pereche activ.");
   s.props[me]={mine:a.id,theirs:b.id,to:b.o,pay:o.pay||"split",laut:o.laut||[],keep:o.keep||"me",suf:!!o.suf,at:Date.now()};
+  p.ready=false;pl(s,b.o).ready=false;fx(s,"propose",b.o);
   log(s,`${p.name} propune nunta ${a.n} + ${b.n} lui ${pname(s,b.o)}.`);
 }
 function cancelProp(s,me){delete s.props[me];}
@@ -412,7 +414,7 @@ function acceptProp(s,me,from){
   log(s,`Nuntă! ${groom.n} și ${bride.n} (${txt}). Cuplul rămâne la ${pname(s,recv)}${fc?`, ${g.name} trage o carte de Soartă`:""}.`);
   P1.ready=false;P2.ready=false;
 }
-function readyNeg(s,me){endNegTurn(s,me);}
+function readyNeg(s,me,v){needNeg(s);pl(s,me).ready=v!==false;if(v!==false)fx(s,"ready",me);tryAdvance(s);}
 
 /* --- fate cards --- */
 function roleTargets(s,key){
@@ -478,7 +480,7 @@ function playFate(s,me,key,x){
 
 /* --- feeding, end --- */
 function feedAndNext(s){
-  s.phase="feed";
+  s.phase="feed";fx(s,"feed");
   s.players.forEach(p=>{
     const cs=coupleList(s,p.id);const sg=singles(s,p.id).filter(x=>!x.nb&&!s.fl.bataie[p.id]);
     const units=cs.length+sg.length;let hungry=Math.max(0,units-p.land);
@@ -511,7 +513,7 @@ function force(s){
       if(s.phase!=="prod")return true;p.ready=true;}
     tryAdvance(s);}
   else if(s.phase==="auct")forceAuct(s);
-  else if(s.phase==="neg")advanceNeg(s);
+  else if(s.phase==="neg")feedAndNext(s);
   return true;
 }
 function timeout(s){if(s.status!=="play"||!s.dl||Date.now()<s.dl)return false;return force(s);}

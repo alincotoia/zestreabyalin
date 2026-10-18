@@ -47,7 +47,7 @@ for(let g=0;g<300;g++){
      if(c.role){const t=G.roleTargets(s,key);if(t.length)x.p=pick(t).id;}
      if(key==='fura'){const f=G.singles(s,me).filter(q=>q.s==='M'&&G.canMarry(q));if(f.length)x.p=f[0].id;}
      tryDo(()=>G.playFate(s,me,key,x));
-   }else tryDo(()=>G.endNegTurn(s,me));
+   }else tryDo(()=>G.readyNeg(s,me,true));
   }
   // invariants
   for(const q of s.players){ if(q.z<0||q.land<1||q.land>5) throw new Error('bad player '+JSON.stringify(q)+' '+s.phase+' '+s.tcur);

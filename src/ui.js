@@ -9,32 +9,84 @@ let tmSel={turn:30,wed:120,auct:20},lastFx=null,seenW=0,seenNeg={},popQ=[],popOp
 let chat=[],unsubC=null,chatOpen=false,chatSeen=0,chatFirst=true,muted=LS.get("zmute")==="1";
 
 /* ---------- sound (synthesized, no files) ---------- */
-let AC=null;
-function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}if(AC.state==="suspended")AC.resume();return AC;}
-document.addEventListener("pointerdown",()=>ac(),{passive:true});
-function tone(f,t0,d,type,g,to){const a=ac();if(!a||muted||a.state!=="running")return;const t=a.currentTime+t0,o=a.createOscillator(),v=a.createGain();o.type=type||"sine";o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g||.15,t+.012);v.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(v).connect(a.destination);o.start(t);o.stop(t+d+.05);}
-function noise(t0,d,g,hp){const a=ac();if(!a||muted||a.state!=="running")return;const b=a.createBuffer(1,Math.max(1,a.sampleRate*d|0),a.sampleRate),ch=b.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=(Math.random()*2-1)*(1-i/ch.length);const src=a.createBufferSource();src.buffer=b;const f=a.createBiquadFilter();f.type="highpass";f.frequency.value=hp||800;const v=a.createGain();v.gain.value=g||.2;src.connect(f).connect(v).connect(a.destination);src.start(a.currentTime+t0);}
+let AC=null,OUT=null,unlocked=false,htmlA=null;
+const SILENT="data:audio/wav;base64,UklGRvQHAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YdAHAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
+function ac(){
+  if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();
+    const comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;
+    OUT=AC.createGain();OUT.gain.value=.95;OUT.connect(comp).connect(AC.destination);}catch(e){return null;}}
+  return AC;
+}
+function unlock(){
+  const a=ac();if(!a)return;
+  try{if(navigator.audioSession&&navigator.audioSession.type!=="playback")navigator.audioSession.type="playback";}catch(e){}
+  if(a.state!=="running")a.resume().catch(()=>{});
+  if(!unlocked){unlocked=true;
+    try{const b=a.createBuffer(1,1,22050),src=a.createBufferSource();src.buffer=b;src.connect(a.destination);src.start(0);}catch(e){}
+    // older iPhones mute Web Audio on the ring/silent switch; a playing <audio> element moves the page to the media channel
+    if(!navigator.audioSession){try{htmlA=new Audio(SILENT);htmlA.loop=true;htmlA.setAttribute("playsinline","");htmlA.play().catch(()=>{});}catch(e){}}
+  }
+}
+["touchend","click","keydown"].forEach(ev=>document.addEventListener(ev,unlock,{capture:true,passive:true}));
+document.addEventListener("visibilitychange",()=>{if(document.hidden){if(htmlA)htmlA.pause();}else{if(htmlA&&unlocked)htmlA.play().catch(()=>{});if(AC&&AC.state!=="running")AC.resume().catch(()=>{});}});
+function sfx(k){
+  if(muted||!SFX[k])return;const a=ac();if(!a)return;
+  const go=()=>{try{SFX[k](a.currentTime+.02);}catch(e){}};
+  if(a.state==="running")go();else a.resume().then(go).catch(()=>{});
+}
+// building blocks: _o()=oscillator note, _n()=filtered noise burst
+function _o(t,f,d,{type="sine",g=.15,to=null,lp=null,vib=0,a=.01}={}){
+  const x=AC.createOscillator(),v=AC.createGain();x.type=type;x.frequency.setValueAtTime(f,t);
+  if(to)x.frequency.exponentialRampToValueAtTime(to,t+d);
+  if(vib){const l=AC.createOscillator(),lg=AC.createGain();l.frequency.value=5.5;lg.gain.value=vib;l.connect(lg).connect(x.frequency);l.start(t);l.stop(t+d+.1);}
+  v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g,t+a);v.gain.exponentialRampToValueAtTime(.0001,t+d);
+  let node=x;if(lp){const fl=AC.createBiquadFilter();fl.type="lowpass";fl.frequency.value=lp;x.connect(fl);node=fl;}
+  node.connect(v).connect(OUT);x.start(t);x.stop(t+d+.05);
+}
+function _n(t,d,{g=.2,type="bandpass",f=2000,q=1,to=null}={}){
+  const len=Math.max(1,AC.sampleRate*d|0),b=AC.createBuffer(1,len,AC.sampleRate),ch=b.getChannelData(0);
+  for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+  const src=AC.createBufferSource();src.buffer=b;const fl=AC.createBiquadFilter();fl.type=type;fl.frequency.setValueAtTime(f,t);fl.Q.value=q;
+  if(to)fl.frequency.exponentialRampToValueAtTime(to,t+d);
+  const v=AC.createGain();v.gain.value=g;src.connect(fl).connect(v).connect(OUT);src.start(t);
+}
+const bell=(t,f,g=.12,d=1.2)=>{_o(t,f,d,{g});_o(t,f*2.76,d*.5,{g:g*.35});_o(t,f*5.4,d*.25,{g:g*.15});};
 const SFX={
-  dice(){for(let i=0;i<6;i++)noise(i*.06,.045,.28,1800);tone(196,.4,.14,"triangle",.18);},
-  coin(){tone(1318,0,.1,"square",.05);tone(1975,.07,.28,"square",.045);},
-  bid(){tone(170,0,.09,"triangle",.32);noise(0,.035,.25,500);},
-  win(){[659,880,1318].forEach((f,i)=>tone(f,i*.09,.3,"triangle",.14));},
-  card(){noise(0,.22,.16,3000);tone(740,.05,.12,"sine",.06,1100);},
-  wedok(){[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,i*.11,.32,"triangle",.14));},
-  wedfail(){tone(330,0,.28,"sawtooth",.07,220);tone(247,.24,.45,"sawtooth",.07,150);},
-  times(){tone(98,0,1.6,"sine",.28);tone(147,.03,1.3,"sine",.09);noise(0,.5,.06,200);},
-  good(){[784,988,1175].forEach((f,i)=>tone(f,i*.13,.5,"sine",.12));},
-  death(){tone(110,0,.9,"sine",.22,55);},
-  turn(){tone(880,0,.16,"sine",.16);tone(1174,.13,.34,"sine",.14);},
-  tick(){tone(1050,0,.045,"square",.05);},
-  chat(){tone(1320,0,.09,"sine",.09,1760);},
-  neg(){[392,494,587,784].forEach((f,i)=>tone(f,i*.09,.3,"triangle",.11));},
-  auct(){tone(523,0,.09,"square",.06);tone(523,.14,.09,"square",.06);tone(784,.28,.32,"square",.06);}
+  tap(t){_n(t,.03,{g:.35,f:1800,q:3});_o(t,520,.06,{type:"triangle",g:.08});},
+  dice(t){let x=t;for(let i=0;i<9;i++){x+=.035+Math.random()*.06;_n(x,.03,{g:.5,f:2400+Math.random()*1500,q:4});}
+    x+=.06;_o(x,140,.18,{type:"triangle",g:.35,to:70});_n(x,.08,{g:.4,type:"lowpass",f:600});
+    _o(x+.13,120,.12,{type:"triangle",g:.2,to:80});_n(x+.13,.05,{g:.25,type:"lowpass",f:700});},
+  coin(t){bell(t,1568,.09,.5);bell(t+.08,2093,.08,.6);_n(t,.15,{g:.12,f:6000,q:2});},
+  bid(t){_o(t,180,.12,{type:"triangle",g:.45,to:90});_n(t,.05,{g:.5,type:"lowpass",f:900});},
+  win(t){[523,659,784,1046].forEach((f,i)=>_o(t+i*.1,f,.35,{type:"sawtooth",g:.07,lp:2200}));_o(t+.42,1046,.9,{type:"sawtooth",g:.08,lp:2600,vib:6});_o(t+.42,784,.9,{type:"sawtooth",g:.05,lp:2000});bell(t+.42,2093,.06,1);},
+  card(t){_n(t,.25,{g:.35,f:900,q:.8,to:5000});_o(t+.12,880,.08,{type:"triangle",g:.06});},
+  wedok(t){ // joyful fanfare with bells and a little hora run
+    const mel=[[523,0,.16],[659,.15,.16],[784,.3,.16],[1046,.45,.5],[880,.95,.14],[1046,1.08,.14],[1175,1.21,.14],[1318,1.34,.7]];
+    mel.forEach(([f,d,l])=>{_o(t+d,f,l+.1,{type:"sawtooth",g:.08,lp:2800});_o(t+d,f/2,l+.1,{type:"triangle",g:.05});});
+    [[523,659,784],[659,784,1046]].forEach((ch,i)=>ch.forEach(f=>_o(t+.45+i*.89,f,.6,{type:"triangle",g:.05})));
+    for(let i=0;i<10;i++)bell(t+.45+i*.12,[2093,2637,3136][i%3],.04,.4);
+    for(let i=0;i<8;i++)_n(t+.95+i*.13,.04,{g:.3,f:4500,q:2});},
+  wedfail(t){ // sad trombone: wah wah wah waaah
+    [[392,0,.32],[370,.38,.32],[349,.76,.32],[330,1.14,1.1]].forEach(([f,d,l],i)=>_o(t+d,f,l,{type:"sawtooth",g:.11,lp:900,vib:i===3?7:0,a:.04,to:i===3?300:null}));},
+  times(t){_n(t,1.8,{g:.5,type:"lowpass",f:180,q:.7});_n(t+.15,1.2,{g:.25,type:"lowpass",f:420});_o(t,65,1.8,{g:.25,to:45});_o(t,98,1.4,{g:.1});},
+  good(t){[784,988,1175,1568].forEach((f,i)=>bell(t+i*.12,f,.08,.9));},
+  death(t){bell(t,196,.22,2.4);bell(t+1.1,196,.14,2);},
+  born(t){_o(t,700,.14,{g:.1,to:1100});_o(t+.16,900,.2,{g:.09,to:1400});},
+  feed(t){for(let i=0;i<3;i++)_n(t+i*.16,.09,{g:.4,type:"lowpass",f:500+i*80,q:2});},
+  propose(t){[659,784,988,1318].forEach((f,i)=>_o(t+i*.07,f,.5,{type:"triangle",g:.08}));},
+  tick(t){_o(t,1250,.05,{type:"square",g:.04});},
+  chat(t){_o(t,1320,.09,{g:.08,to:1760});_o(t+.1,1760,.12,{g:.06});},
+  neg(t){[392,494,587,784].forEach((f,i)=>_o(t+i*.09,f,.35,{type:"triangle",g:.1}));bell(t+.36,1568,.05,.8);},
+  auct(t){bell(t,880,.1,.4);bell(t+.18,880,.1,.4);bell(t+.36,1318,.12,.9);},
+  ready(t){_o(t,988,.12,{type:"triangle",g:.06});}
 };
 function onState(s){
   if(lastFx===null){lastFx=s.fxn||0;seenW=s.wroll?s.wroll.n:0;if(s.phase==="neg")seenNeg[s.code+":"+s.turn]=1;return;}
-  const fresh=(s.fx||[]).filter(([n])=>n>lastFx).slice(-3);lastFx=Math.max(lastFx,s.fxn||0);
-  fresh.forEach(([n,k,id],i)=>setTimeout(()=>{if(k==="turn"){if(id===ME)SFX.turn();}else if(SFX[k])SFX[k]();},i*220));
+  const fresh=(s.fx||[]).filter(([n])=>n>lastFx).slice(-4);lastFx=Math.max(lastFx,s.fxn||0);
+  fresh.forEach(([n,k,id],i)=>setTimeout(()=>{
+    if(k==="propose"){if(id===ME)sfx("propose");}
+    else if(k==="ready"||k==="turn"||k==="wedok"||k==="wedfail"){} // wedding sounds play with their popup
+    else sfx(k);},i*240));
   if(s.wroll&&s.wroll.n>seenW){seenW=s.wroll.n;if(Date.now()-(s.wroll.at||0)<20000)queuePop({t:"w",w:s.wroll});}
   if(s.phase==="neg"&&!seenNeg[s.code+":"+s.turn]){seenNeg[s.code+":"+s.turn]=1;queuePop({t:"neg"});}
 }
@@ -44,17 +96,44 @@ function nextPop(){
   if(!popOpen){el.hidden=true;return;}
   let h="";
   if(popOpen.t==="w"){const w=popOpen.w;
-    h=`<div class="popc wed ${w.ok?"ok":"no"}"><p class="eyebrow">Nuntă · ${esc(pname(S,w.from))} și ${esc(pname(S,w.to))}</p><h2>${esc(w.a)} + ${esc(w.b)}</h2>
+    h=`<div class="popc wed pending ${w.ok?"ok":"no"}"><p class="eyebrow">Nuntă · ${esc(pname(S,w.from))} și ${esc(pname(S,w.to))}</p><h2>${esc(w.a)} + ${esc(w.b)}</h2>
     <div class="bigdie">${w.r?dieFace(w.r):"✓"}</div>
     <p class="need">${w.r?`A picat <b>${w.r}</b> · trebuia ${w.need?`1${w.need>1?"–"+w.need:""}`:"un miracol"}`:esc(w.how||"")}</p>
     <p class="verdict">${w.ok?"Nunta a ieșit!":"Nunta n-a ieșit."}</p><button class="btn" data-a="pop-x">Închide</button></div>`;
-    popT=setTimeout(nextPop,6000);}
+    if(w.r)sfx("dice");
+    setTimeout(()=>{const c=$("#pop .popc");if(!c||popOpen&&popOpen.w!==w)return;c.classList.remove("pending");
+      if(w.ok){sfx("wedok");burst("confetti");}else{sfx("wedfail");burst("rain");}},w.r?750:150);
+    popT=setTimeout(nextPop,7000);}
   else if(popOpen.t==="neg"){const p=meP();
     h=`<div class="popc"><p class="eyebrow">Etapa IV</p><h2>Nunți și negocieri</h2>
-    <p>Acum poți juca <b>cărțile de Soartă</b>. Nunțile se propun pe rând, în sensul acelor de ceasornic. Începe <b>${esc(pname(S,negCur(S)))}</b>.</p>
+    <p>Acum poți juca <b>cărțile de Soartă</b> și poți propune nunți oricui, oricând în etapa asta. Când ai terminat, apasă „Sunt gata de Hrană”.</p>
     ${p&&p.hand.length?`<div class="grid1">${p.hand.map(k=>`<button class="btn" data-a="pop-card" data-v="${k}">${esc(FATE[k].t)}</button>`).join("")}</div>`:`<p class="muted small">Nu ai cărți acum. Poți cumpăra una cu 2 Zestre.</p>`}
     <button class="btn primary" data-a="pop-x">Am înțeles</button></div>`;}
   el.innerHTML=h;el.hidden=false;
+}
+/* ---------- animations ---------- */
+const reduceMotion=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}};
+function burst(kind){
+  if(reduceMotion())return;const L=document.createElement("div");L.className="fxlayer "+kind;
+  const cols=["#e3584a","#56b6a6","#e7ad44","#f4e7d6","#2c4d6b"];
+  const N=kind==="confetti"?70:kind==="hearts"?16:40;
+  for(let i=0;i<N;i++){const d=document.createElement("i");
+    d.style.left=(Math.random()*100)+"%";d.style.animationDelay=(Math.random()*(kind==="rain"?1.2:.5))+"s";
+    d.style.animationDuration=(kind==="rain"?.7+Math.random()*.5:1.8+Math.random()*1.4)+"s";
+    if(kind==="confetti"){d.style.background=cols[i%5];d.style.setProperty("--r",(Math.random()*720-360)+"deg");d.style.setProperty("--x",(Math.random()*120-60)+"px");}
+    L.appendChild(d);}
+  document.body.appendChild(L);setTimeout(()=>L.remove(),3800);
+}
+let seenP=null,seenRoll=new Set(),animTurn=null,animAuct=null,prevStat=null,handSeen=null,openOthers=new Set();
+function afterRender(){
+  if(!S||S.status==="lobby")return;const p=meP();if(!p)return;
+  // floating +/- next to your Zestre and Land
+  const st={z:p.z,land:p.land};
+  if(prevStat&&prevStat.code===S.code){
+    [["z",0],["land",1]].forEach(([k,i])=>{const d=st[k]-prevStat[k];if(!d)return;const box=document.querySelectorAll(".stats > span")[i];if(!box)return;
+      box.classList.add(d>0?"up":"down");const f=document.createElement("em");f.className="delta "+(d>0?"pos":"neg");f.textContent=(d>0?"+":"")+d;box.appendChild(f);});
+  }
+  prevStat={...st,code:S.code};
 }
 function dieFace(n){const P={1:[[50,50]],2:[[28,28],[72,72]],3:[[25,25],[50,50],[75,75]],4:[[28,28],[72,28],[28,72],[72,72]],5:[[25,25],[75,25],[50,50],[25,75],[75,75]],6:[[28,22],[72,22],[28,50],[72,50],[28,78],[72,78]]}[n]||[];
   return `<svg viewBox="0 0 100 100" aria-label="zar ${n}"><rect x="4" y="4" width="92" height="92" rx="18" class="df"/>${P.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="9" class="dp"/>`).join("")}</svg>`;}
@@ -64,7 +143,7 @@ function subChat(c){
   if(unsubC)unsubC();chat=[];chatFirst=true;chatSeen=+(LS.get("zchat:"+c)||0);
   unsubC=db.collection("chat/"+c+"/m").orderBy("t","desc").limit(60).onSnapshot(q=>{
     const list=q.docs.map(d=>d.data()).filter(m=>m&&m.t).sort((a,b)=>a.t-b.t);
-    if(!chatFirst&&list.some(m=>m.id!==ME&&!chat.some(o=>o.t===m.t&&o.id===m.id)))SFX.chat();
+    if(!chatFirst&&list.some(m=>m.id!==ME&&!chat.some(o=>o.t===m.t&&o.id===m.id)))sfx("chat");
     chatFirst=false;chat=list;renderChat();
   },()=>{});
 }
@@ -89,12 +168,12 @@ const fmtT=sec=>{sec=Math.max(0,Math.ceil(sec));return sec>=60?`${Math.floor(sec
 function mustAct(){const p=meP();if(!p)return false;
   if(S.phase==="times"||S.phase==="prod")return !p.ready;
   if(S.phase==="auct")return S.auction&&!S.auction.passed[ME]&&S.auction.by!==ME;
-  if(S.phase==="neg")return negCur(S)===ME;return false;}
+  if(S.phase==="neg")return !p.ready;return false;}
 setInterval(()=>{
   if(view!=="game"||!S||S.status!=="play"||!S.dl)return;
   const rem=(S.dl-Date.now())/1000,el=$("#tbar");
   if(el){el.querySelector("i").style.width=Math.max(0,Math.min(1,rem/(S.dlLen||1)))*100+"%";el.querySelector("span").textContent=rem>0?fmtT(rem):"Timpul a expirat";el.classList.toggle("low",rem<=5);}
-  const sec=Math.ceil(rem);if(rem>0&&rem<=5&&sec!==lastTick&&mustAct()){lastTick=sec;SFX.tick();}
+  const sec=Math.ceil(rem);if(rem>0&&rem<=5&&sec!==lastTick&&mustAct()){lastTick=sec;sfx("tick");}
   if(rem<-1.2&&timeoutTried!==S.dl&&!busy){timeoutTried=S.dl;setTimeout(()=>act(s=>timeout(s),true),Math.random()*600);}
 },250);
 
@@ -172,7 +251,7 @@ function render(){
   if(view==="loading"){app.innerHTML=`<div class="center"><div class="spin"></div><p>Se deschide domeniul…</p></div>`;return;}
   if(view==="nodb"){app.innerHTML=`<section class="card pad"><h2>Jocul are nevoie de conexiune</h2><p>Zestrea păstrează mutările tuturor jucătorilor într-o bază de date comună. Deschide pagina din aplicația Claude, autentificat în contul tău, ca să poți juca.</p></section>`;return;}
   if(view==="lobby"){renderLobby();renderChat();return;}
-  if(view==="game"&&S){S.status==="lobby"?renderRoom():renderGame();if(SH)renderSheet();}
+  if(view==="game"&&S){S.status==="lobby"?renderRoom():renderGame();if(SH)renderSheet();afterRender();}
   renderChat();
 }
 
@@ -266,7 +345,7 @@ function renderGame(){
   $("#app").innerHTML=`${topBar()}
   ${S.status==="ended"?endHTML():`
   <nav class="phases">${PHASES.map(([k,t],i)=>`<span class="${k===ph?"on":""} ${PHASES.findIndex(x=>x[0]===ph)>i?"done":""}"><b>${"I II III IV V".split(" ")[i]}</b>${t}</span>`).join("")}</nav>
-  ${S.dl?`<div id="tbar" class="tbar"><i></i><span>${fmtT((S.dl-Date.now())/1000)}</span><em>${S.phase==="neg"?`Rândul lui ${esc(pname(S,negCur(S)))}`:S.phase==="auct"?"Licitația se închide în":"Timp rămas"}</em></div>`:""}
+  ${S.dl?`<div id="tbar" class="tbar"><i></i><span>${fmtT((S.dl-Date.now())/1000)}</span><em>${S.phase==="neg"?"Nunțile se închid în":S.phase==="auct"?"Licitația se închide în":"Timp rămas"}</em></div>`:""}
   ${timesHTML()}
   <section class="card pad panel">${panelHTML()}</section>`}
   ${domainHTML(p)}
@@ -280,7 +359,9 @@ function renderGame(){
 function timesHTML(){
   const c=TIMES[S.tcur];if(!c)return"";
   const p=meP();const seer=peas(S,ME).some(x=>hasRole(x,"clarv"));
-  return `<section class="times ${c.g?"good":"hard"}"><div class="band"></div><p class="eyebrow">${c.g?"Vremuri Bune":"Vremuri Grele"} · ${S.last?"ultima tură":`${S.tdeck.length} ${S.tdeck.length===1?"carte rămasă":"cărți rămase"}`}</p><h2>${esc(c.t)}</h2><p>${esc(c.d)}</p>
+  const k=S.code+":"+S.turn,fresh=animTurn!==k;animTurn=k;
+  if(fresh&&!c.g&&!reduceMotion())setTimeout(()=>{document.body.classList.add("quake");setTimeout(()=>document.body.classList.remove("quake"),700);},250);
+  return `<section class="times ${c.g?"good":"hard"} ${fresh?"reveal":""}"><div class="band"></div>${fresh&&!c.g?`<div class="bolt"></div>`:""}<p class="eyebrow">${c.g?"Vremuri Bune":"Vremuri Grele"} · ${S.last?"ultima tură":`${S.tdeck.length} ${S.tdeck.length===1?"carte rămasă":"cărți rămase"}`}</p><h2>${esc(c.t)}</h2><p>${esc(c.d)}</p>
   ${seer&&S.tdeck.length?`<p class="seer">Clarvăzătoarea ta vede ce urmează: <b>${esc(TIMES[S.tdeck[0]].t)}</b></p>`:""}
   ${S.mayor?`<p class="small muted">Primarul satului: ${esc(pname(S,S.mayor))}</p>`:""}</section>`;
 }
@@ -307,7 +388,7 @@ function panelHTML(){
     let h=`<h3>II. Producție</h3><p class="small muted">1: +1 Zestre și un copil · 2–3: +2 și un copil · 4–5: +2 · 6: +3${!canChild(S,ME)?" · Ai 7 țărani singuri, nu se mai nasc copii.":""}${S.fl.twins?" · Tura asta se nasc gemeni.":""}</p>`;
     if(!u.length)h+=`<p>Niciun Cuplu nu are Pământ, nu produci nimic tura asta.</p>`;
     h+=u.map(x=>{const r=S.ts.rolled[x.k];const nm=x.c?`${esc(x.a.n)} și ${esc(x.b.n)}`:esc(x.a.n);
-      return `<div class="unit">${fig(x.a)}${x.c?fig(x.b):""}<span class="un">${nm}</span>${r?`<span class="die">${r}</span>`:p.ready?"":p.fix?`<span class="pick">${[1,2,3,4,5,6].map(v=>`<button data-a="roll" data-v="${x.k}:${v}">${v}</button>`).join("")}</span>`:`<button class="btn small primary" data-a="roll" data-v="${x.k}:">Dă cu zarul</button>`}</div>`;}).join("");
+      return `<div class="unit">${fig(x.a)}${x.c?fig(x.b):""}<span class="un">${nm}</span>${r?(()=>{const rk=S.code+":"+S.turn+":"+x.k,nw=!seenRoll.has(rk);seenRoll.add(rk);return `<span class="die ${nw?"spin":""}">${r}</span>`;})():p.ready?"":p.fix?`<span class="pick">${[1,2,3,4,5,6].map(v=>`<button data-a="roll" data-v="${x.k}:${v}">${v}</button>`).join("")}</span>`:`<button class="btn small primary" data-a="roll" data-v="${x.k}:">Dă cu zarul</button>`}</div>`;}).join("");
     if(all.length>u.length)h+=`<p class="small muted">${all.length-u.length} ${all.length-u.length===1?"Cuplu nu are":"Cupluri nu au"} Pământ și nu produc.</p>`;
     if(p.fix)h+=`<p class="small seer">Ai călcat în dânsul: alegi tu numărul la următoarea aruncare.</p>`;
     else if(p.hand.includes("calcat"))h+=`<button class="btn ghost small" data-a="f-open" data-v="calcat">Joacă Ai călcat în dânsul</button>`;
@@ -316,16 +397,15 @@ function panelHTML(){
   }
   if(ph==="auct"){
     const a=S.auction,c=FATE[a.card];const lead=a.by===ME,passed=a.passed[ME];
-    return `<h3>III. Licitație</h3><div class="fate big"><div class="band"></div><b>${esc(c.t)}</b>${c.role?`<i>Rol</i>`:""}<p>${esc(c.d)}</p></div>
+    const ak=S.code+":"+S.turn+":"+a.card,af=animAuct!==ak;animAuct=ak;
+    return `<h3>III. Licitație</h3><div class="fate big ${af?"flipin":""}"><div class="band"></div><b>${esc(c.t)}</b>${c.role?`<i>Rol</i>`:""}<p>${esc(c.d)}</p></div>
       <p class="bidline">${a.by?`Oferta: <b>${a.bid} Zestre</b> de la ${esc(pname(S,a.by))}`:"Nicio ofertă încă. Pornește de la 1 Zestre."}</p>
       ${lead?`<p class="waiting">Tu conduci licitația.</p>`:`<div class="grid3">${[1,2,3].map(d=>a.bid+d).filter(v=>v<=p.z).map(v=>`<button class="btn primary" data-a="bid" data-v="${v}">Dau ${v}</button>`).join("")||`<p class="small muted">Nu ai destulă Zestre.</p>`}</div>
       ${passed?`<p class="small muted">Ai spus pas. Poți reintra cu o ofertă.</p>`:`<button class="btn ghost" data-a="pass">Pas</button>`}`}
       <div class="readyrow">${S.players.map(q=>`<span class="rd ${a.passed[q.id]?"":"ok"}">${esc(q.name)}${a.passed[q.id]?": pas":q.id===a.by?": conduce":""}</span>`).join("")}</div>`;
   }
   if(ph==="neg"){
-    const cur=negCur(S),myTurn=cur===ME,n=S.players.length;
-    let h=`<h3>IV. Nunți și negocieri</h3><div class="order">${S.players.map((_,i)=>S.players[(S.negStart+i)%n]).map((q,i)=>`<span class="${i<S.negI?"done":i===S.negI?"cur":""}">${esc(q.name)}${q.id===ME?" (tu)":""}</span>`).join(`<span class="arr">›</span>`)}</div>
-    ${myTurn?`<p class="turnme">E rândul tău să propui nunți.</p>`:`<p class="waiting">Acum propune ${esc(pname(S,cur))}. Între timp poți juca cărți, cumpăra și răspunde la propuneri.</p>`}`;
+    let h=`<h3>IV. Nunți și negocieri</h3><p class="small muted">Toți boierii pot propune nunți acum, în orice ordine. Fiecare poate avea câte o propunere deschisă.</p>`;
     Object.entries(S.props).filter(([f,pr])=>pr.to===ME).forEach(([f,pr])=>{const a=S.P[pr.mine],b=S.P[pr.theirs];if(!a||!b)return;
       h+=`<div class="prop in"><p><b>${esc(pname(S,f))}</b> îți propune nunta <b>${esc(a.n)}</b> + <b>${esc(b.n)}</b> (al tău).</p><p class="small">${propTerms(pr,a,b,f)}</p><div class="row"><button class="btn primary" data-a="p-acc" data-v="${f}">Acceptă și dă cu zarul</button><button class="btn ghost" data-a="p-dec" data-v="${f}">Refuz</button></div></div>`;});
     const mine=S.props[ME];
@@ -334,7 +414,7 @@ function panelHTML(){
     if(w){const can=[];if(p.hand.includes("fura")&&S.P[w.bride]&&S.P[w.bride].s==="F")can.push("fura");if(p.hand.includes("piatra")&&(w.recv===ME||w.giver===ME))can.push("piatra");
       if(can.length)h+=`<div class="prop out"><p>Tocmai a fost o nuntă. Poți juca acum:</p><div class="row wrap">${can.map(k=>`<button class="btn" data-a="f-open" data-v="${k}">${esc(FATE[k].t)}</button>`).join("")}</div></div>`;}
     h+=`<div class="grid2 acts">
-      <button class="btn primary" data-a="w-open" ${!myTurn||S.props[ME]?"disabled":""}>${myTurn?S.props[ME]?"Aștepți răspunsul":"Propune o nuntă":"Propui când vine rândul tău"}</button>
+      <button class="btn primary" data-a="w-open" ${S.props[ME]?"disabled":""}>${S.props[ME]?"Aștepți răspunsul":"Propune o nuntă"}</button>
       <button class="btn" data-a="buy" data-v="land" ${p.z<4||p.land>=5?"disabled":""}>Cumpără Pământ <small>4 Z</small></button>
       <button class="btn" data-a="buy" data-v="fate" ${p.z<2||S.last||!S.fdeck.length?"disabled":""}>Cumpără Soartă <small>2 Z</small></button>
       <button class="btn" data-a="buy" data-v="adopt" ${p.z<2||singles(S,ME).length>=7?"disabled":""}>Adoptă un copil <small>2 Z</small></button>
@@ -342,8 +422,8 @@ function panelHTML(){
       </div>`;
     const fd=feedPreview(p);
     h+=`<p class="small muted feedp">La Hrană: ${fd.units} ${fd.units===1?"gură":"guri"} de hrănit, ${p.land} pe Pământ.${fd.need?` Vei plăti ${Math.min(fd.need,p.z)} Zestre${fd.need>p.z?` și vei pierde ${Math.min(fd.need-p.z,p.land-1)} Pământ`:""}${fd.need>p.z+p.land-1?`; ${fd.need-p.z-(p.land-1)} țărani mor de foame`:""}.`:" Nu plătești nimic."}</p>`;
-    if(myTurn)h+=`<button class="btn ochre" data-a="endturn">Termin rândul${S.negI===n-1?" (urmează Hrana)":""}</button>`;
-    return h;
+    h+=p.ready?`<button class="btn ghost" data-a="ready" data-v="0">Nu mai sunt gata</button><p class="waiting">Ești gata. Hrana vine când sunt gata toți.</p>`:`<button class="btn ochre" data-a="ready" data-v="1">Sunt gata de Hrană</button>`;
+    return h+readyRow();
   }
   return "";
 }
@@ -365,14 +445,18 @@ function domainHTML(p){
   <div class="peas">${cs.map(([a,b])=>`<div class="couple ${prodKeys.has(a.id)?"land":""}">${chipStatic(a)}${chipStatic(b)}${prodKeys.has(a.id)?`<span class="onland">pe Pământ</span>`:""}</div>`).join("")}
   ${sg.map(x=>`<div class="single ${prodKeys.has(x.id)?"land":""}">${chipStatic(x)}</div>`).join("")}</div></section>`;
 }
-function chipStatic(p){return `<div class="pc">${fig(p,p.nb?"nb":"")}<span><b>${esc(p.n)}</b>${p.nb?`<i>nou-născut</i>`:""}${p.r.map(roleTag).join("")}</span></div>`;}
+function chipStatic(p){let pop="";if(seenP){if(!seenP.has(p.id))pop=" born";}seenP=seenP||new Set();seenP.add(p.id);return `<div class="pc${pop}">${fig(p,p.nb?"nb":"")}<span><b>${esc(p.n)}</b>${p.nb?`<i>nou-născut</i>`:""}${p.r.map(roleTag).join("")}</span></div>`;}
 function handHTML(p){
+  const prev=handSeen&&handSeen.code===S.code?handSeen.c:null,now={};
+  const cards=p.hand.map(k=>{const c=FATE[k];now[k]=(now[k]||0)+1;const nw=prev&&now[k]>(prev[k]||0);
+    return `<button class="fate${nw?" dealt":""}" data-a="f-open" data-v="${k}"><div class="band"></div><b>${esc(c.t)}</b>${c.role?`<i>Rol</i>`:""}<p>${esc(c.d)}</p></button>`;}).join("");
+  handSeen={code:S.code,c:now};
   return `<section class="card pad"><h3>Cărțile tale de Soartă <span class="muted small">(${p.hand.length})</span></h3>
-  ${p.hand.length?`<div class="hand">${p.hand.map((k,i)=>{const c=FATE[k];return `<button class="fate" data-a="f-open" data-v="${k}"><div class="band"></div><b>${esc(c.t)}</b>${c.role?`<i>Rol</i>`:""}<p>${esc(c.d)}</p></button>`;}).join("")}</div>`:`<p class="muted small">Nu ai cărți. Le câștigi la licitație, le cumperi cu 2 Zestre sau le primești când dai o Mândră la nuntă.</p>`}</section>`;
+  ${p.hand.length?`<div class="hand">${cards}</div>`:`<p class="muted small">Nu ai cărți. Le câștigi la licitație, le cumperi cu 2 Zestre sau le primești când dai o Mândră la nuntă.</p>`}</section>`;
 }
 function otherHTML(o){
   const cs=coupleList(S,o.id),sg=singles(S,o.id);
-  return `<details class="card other"><summary><span class="oname">${esc(o.name)}${S.mayor===o.id?` <span class="tag">primar</span>`:""}</span><span class="ostats">${zIcon()}${o.z} ${lIcon()}${o.land} · ${cs.length} cupl. · ${sg.length} sing. · ${o.hand.length} cărți</span></summary>
+  return `<details class="card other" data-o="${esc(o.id)}" ${openOthers.has(o.id)?"open":""}><summary><span class="oname">${esc(o.name)}${S.mayor===o.id?` <span class="tag">primar</span>`:""}</span><span class="ostats">${zIcon()}${o.z} ${lIcon()}${o.land} · ${cs.length} cupl. · ${sg.length} sing. · ${o.hand.length} cărți</span></summary>
   <div class="peas">${cs.map(([a,b])=>`<div class="couple">${chipStatic(a)}${chipStatic(b)}</div>`).join("")}${sg.map(x=>`<div class="single">${chipStatic(x)}</div>`).join("")}</div></details>`;
 }
 function endHTML(){
@@ -475,9 +559,9 @@ const H={
   bid:v=>act(s=>bid(s,ME,v)),
   pass:()=>act(s=>passBid(s,ME)),
   buy:v=>act(s=>buy(s,ME,v)),
-  endturn:()=>act(s=>endNegTurn(s,ME)),
+  ready:v=>act(s=>readyNeg(s,ME,v==="1")),
   tm:v=>{const [k,x]=v.split(":");tmSel[k]=+x;document.querySelectorAll(`[data-tm="${k}"] button`).forEach(b=>b.classList.toggle("on",b.dataset.v===v));},
-  mute:()=>{muted=!muted;LS.set("zmute",muted?"1":"0");if(!muted){ac();SFX.coin();}render();},
+  mute:()=>{muted=!muted;LS.set("zmute",muted?"1":"0");if(!muted){unlock();sfx("coin");}render();},
   "pop-x":()=>nextPop(),
   "pop-card":v=>{nextPop();openSheet({t:"f",k:v,x:{}});},
   chat:()=>{chatOpen=!chatOpen;renderChat();if(chatOpen)setTimeout(()=>$("#chatin")&&$("#chatin").focus(),50);},
@@ -507,7 +591,8 @@ document.addEventListener("click",e=>{
   const a=b.dataset.a;
   if(a==="w-suf"){SH.suf=b.checked;renderSheet();return;}
   if(a.startsWith("f-pick:")){const f=a.slice(7);let v=b.dataset.v;SH.x[f]=(f==="p"||f==="q")?+v:v;renderSheet();return;}
-  if(H[a]){e.preventDefault();H[a](b.dataset.v,b);}
+  if(H[a]){e.preventDefault();if(a!=="mute")sfx("tap");H[a](b.dataset.v,b);}
 });
 $("#chatform").addEventListener("submit",e=>{e.preventDefault();sendChat();});
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.o){d.open?openOthers.add(d.dataset.o):openOthers.delete(d.dataset.o);}},true);
 boot();
