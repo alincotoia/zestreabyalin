@@ -5,7 +5,7 @@ const LS={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let db=null,user=null,ME=null,myName=LS.get("zname")||"",code=null,S=null,unsubG=null,lobby=[],busy=false,view="loading",hardSel=5,forceArm=0;
 let SH=null; // open sheet state
-let tmSel={turn:30,wed:120,auct:20},lastFx=null,seenW=0,seenNeg={},popQ=[],popOpen=null,popT=null,timeoutTried=null,lastTick=null;
+let modeSel=LS.get("zmode")||"normal",v3dOff=LS.get("z3doff")==="1",v3dFail=false,tmSel={turn:30,wed:120,auct:20},lastFx=null,seenW=0,seenNeg={},popQ=[],popOpen=null,popT=null,timeoutTried=null,lastTick=null;
 let chat=[],unsubC=null,chatOpen=false,chatSeen=0,chatFirst=true,muted=LS.get("zmute")==="1";
 
 /* ---------- sound (synthesized, no files) ---------- */
@@ -102,7 +102,7 @@ function nextPop(){
     <p class="verdict">${w.ok?"Nunta a ieșit!":"Nunta n-a ieșit."}</p><button class="btn" data-a="pop-x">Închide</button></div>`;
     if(w.r)sfx("dice");
     setTimeout(()=>{const c=$("#pop .popc");if(!c||popOpen&&popOpen.w!==w)return;c.classList.remove("pending");
-      if(w.ok){sfx("wedok");burst("confetti");}else{sfx("wedfail");burst("rain");}},w.r?750:150);
+      if(w.ok){sfx("wedok");burst("confetti");}else{sfx("wedfail");burst("rain");}if(typeof V3D!=="undefined")V3D.wedding(w.ok);},w.r?750:150);
     popT=setTimeout(nextPop,7000);}
   else if(popOpen.t==="neg"){const p=meP();
     h=`<div class="popc"><p class="eyebrow">Etapa IV</p><h2>Nunți și negocieri</h2>
@@ -162,7 +162,19 @@ function burst(kind){
   document.body.appendChild(L);setTimeout(()=>L.remove(),3800);
 }
 let seenP=null,seenRoll=new Set(),animTurn=null,animAuct=null,prevStat=null,handSeen=null,openOthers=new Set();
+function use3d(){return !!(S&&S.mode==="3d"&&!v3dOff&&!v3dFail&&S.status!=="lobby"&&S.status!=="ended");}
+async function mount3d(){
+  if(typeof V3D==="undefined")return;
+  const slot=document.getElementById("v3dslot");
+  if(!use3d()||!slot){V3D.detach();return;}
+  if(V3D.active&&V3D.ready){V3D.attach(slot);V3D.sync(S,ME);return;}
+  slot.classList.add("loading");
+  const ok=await V3D.attach(slot);slot.classList.remove("loading");
+  if(!ok){v3dFail=true;toast("Masa 3D nu se poate încărca pe acest telefon. Continuăm în modul normal.");render();return;}
+  V3D.sync(S,ME);
+}
 function afterRender(){
+  mount3d();
   if(!S||S.status==="lobby")return;if(S.status==="ended")recordResult();const p=meP();if(!p)return;
   // floating +/- next to your Zestre and Land
   const st={z:p.z,land:p.land};
@@ -237,7 +249,7 @@ function openGame(c,silent){
     view="game";render();
   },e=>{toast("Conexiunea cu jocul s-a pierdut. Redeschide pagina.");});
 }
-function closeGame(){if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;LS.set("zcode",null);view="lobby";render();}
+function closeGame(){if(typeof V3D!=="undefined"){V3D.detach();V3D.reset();}if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;LS.set("zcode",null);view="lobby";render();}
 const gref=()=>db.doc("games/"+code);
 
 async function act(fn,silent){
@@ -309,6 +321,9 @@ function renderLobby(){
       <div class="row wrap"><span class="lbl">Vremuri Grele</span>
         <div class="seg" id="hardseg">${[5,6,7].map(n=>`<button data-a="hard" data-v="${n}" class="${n===hardSel?"on":""}">${n}</button>`).join("")}</div>
         <span class="muted small">5 e jocul normal, 6–7 îl lungesc</span></div>
+      <div class="modepick"><span class="lbl">Tip de joc</span>
+        <div class="seg wide" id="modeseg"><button data-a="mode" data-v="normal" class="${modeSel==="normal"?"on":""}">Normal</button><button data-a="mode" data-v="3d" class="${modeSel==="3d"?"on":""}">3D</button></div>
+        <span class="small muted">În 3D, deasupra butoanelor apare masa cu domeniile tuturor, zarurile și Vremurile. Consumă mai multă baterie.</span></div>
       <p class="lbl">Cronometre</p>
       ${tmRow("turn","Pe tură",[[0,"Fără"],[20,"20 s"],[30,"30 s"],[45,"45 s"],[60,"1 min"]])}
       ${tmRow("wed","Etapa de nunți",[[0,"Fără"],[60,"1 min"],[120,"2 min"],[180,"3 min"]])}
@@ -342,7 +357,7 @@ async function createGame(){
   if(!needName()||busy)return;
   const L="ABCDEFGHJKLMNPRSTUVZ";let c="";for(let i=0;i<4;i++)c+=L[Math.floor(Math.random()*L.length)];
   busy=true;
-  try{await db.doc("games/"+c).set(newGame(c,ME,myName,hardSel,{...tmSel}));openGame(c);}
+  try{const g=newGame(c,ME,myName,hardSel,{...tmSel});g.mode=modeSel;await db.doc("games/"+c).set(g);openGame(c);}
   catch(e){toast(e.code==="invalid_argument"?"Nu ai drept de scriere aici. Cere-i gazdei acces de Editor la pagină.":"Jocul nu s-a putut crea. Mai încearcă.");}
   finally{busy=false;}
 }
@@ -366,6 +381,7 @@ function renderRoom(){
   <section class="card pad stack">
     <h2>Masa ${esc(S.code)}</h2>
     <p class="muted">Prietenii deschid aceeași pagină și apasă „Intră” la jocul ${esc(S.code)}. Se joacă cu ${S.hard} Vremuri Grele.</p>
+    <p class="small">Tip de joc: <b>${S.mode==="3d"?"3D":"Normal"}</b></p>
     <p class="small">Cronometre: tură ${tmTxt((S.tm||{}).turn)} · etapa de nunți ${tmTxt((S.tm||{}).wed)} · licitație ${tmTxt((S.tm||{}).auct)}</p>
     <p class="small muted">Ordinea la masă se trage la începutul jocului. Boții joacă de pe telefonul gazdei, așa că gazda trebuie să rămână în aplicație.</p>
     <ul class="seats">${S.players.map((p,i)=>`<li><span class="seatn">${i+1}</span><span class="sname">${esc(p.name)}${p.bot?` <span class="tag bot">bot</span>`:""}${p.id===S.host?` <span class="tag">gazdă</span>`:""}${p.id===ME?` <span class="tag pos">tu</span>`:""}</span>${p.bot&&isHost()?`<button class="rmbot" data-a="rmbot" data-v="${esc(p.id)}" aria-label="Scoate botul">×</button>`:""}</li>`).join("")}</ul>
@@ -375,7 +391,7 @@ function renderRoom(){
   </section>`;
 }
 function topBar(){
-  return `<header class="top"><button class="home" data-a="home" aria-label="Înapoi la jocuri">‹</button><span class="word sm">Zestrea</span>${S?`<span class="code">${esc(S.code)}</span>`:""}${S&&S.status==="play"?`<span class="turn">Tura ${S.turn}<small>/${S.total}</small></span>`:""}<button class="mute ${muted?"off":""}" data-a="mute" aria-label="${muted?"Pornește sunetul":"Oprește sunetul"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" class="sp"/>${muted?`<path d="M16 9l5 6M21 9l-5 6" class="sw"/>`:`<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" class="sw"/>`}</svg></button></header>`;
+  return `<header class="top"><button class="home" data-a="home" aria-label="Înapoi la jocuri">‹</button><span class="word sm">Zestrea</span>${S?`<span class="code">${esc(S.code)}</span>`:""}${S&&S.status==="play"?`<span class="turn">Tura ${S.turn}<small>/${S.total}</small></span>`:""}${S&&S.mode==="3d"&&S.status!=="lobby"?`<button class="v3dtog ${use3d()?"on":""}" data-a="t3d" aria-label="${use3d()?"Oprește 3D":"Pornește 3D"}">3D</button>`:""}<button class="mute ${muted?"off":""}" data-a="mute" aria-label="${muted?"Pornește sunetul":"Oprește sunetul"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" class="sp"/>${muted?`<path d="M16 9l5 6M21 9l-5 6" class="sw"/>`:`<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" class="sw"/>`}</svg></button></header>`;
 }
 
 /* ---------- game ---------- */
@@ -386,6 +402,7 @@ function renderGame(){
   ${S.status==="ended"?endHTML():`
   <nav class="phases">${PHASES.map(([k,t],i)=>`<span class="${k===ph?"on":""} ${PHASES.findIndex(x=>x[0]===ph)>i?"done":""}"><b>${"I II III IV V".split(" ")[i]}</b>${t}</span>`).join("")}</nav>
   ${S.dl?`<div id="tbar" class="tbar"><i></i><span>${fmtT((S.dl-Date.now())/1000)}</span><em>${S.phase==="neg"?"Nunțile se închid în":S.phase==="auct"?"Licitația se închide în":"Timp rămas"}</em></div>`:""}
+  ${use3d()?`<div id="v3dslot" class="v3dslot"></div>`:""}
   ${timesHTML()}
   <section class="card pad panel">${panelHTML()}</section>`}
   ${domainHTML(p)}
@@ -590,7 +607,7 @@ const H={
   create:()=>createGame(),
   join:v=>joinGame(v),
   open:v=>openGame(v),
-  home:()=>{closeSheet();if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;view="lobby";render();},
+  home:()=>{closeSheet();if(typeof V3D!=="undefined"){V3D.detach();V3D.reset();}if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;view="lobby";render();},
   leave:async()=>{const ok=await act(s=>{s.players=s.players.filter(p=>p.id!==ME);if(s.host===ME&&s.players.length)s.host=s.players[0].id;});if(ok)closeGame();},
   start:()=>act(s=>startGame(s)),
   addbot:()=>act(s=>addBot(s)),
@@ -604,6 +621,8 @@ const H={
   buy:v=>act(s=>buy(s,ME,v)),
   ready:v=>act(s=>readyNeg(s,ME,v==="1")),
   tm:v=>{const [k,x]=v.split(":");tmSel[k]=+x;document.querySelectorAll(`[data-tm="${k}"] button`).forEach(b=>b.classList.toggle("on",b.dataset.v===v));},
+  mode:v=>{modeSel=v;LS.set("zmode",v);document.querySelectorAll("#modeseg button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));if(v==="3d"&&typeof V3D!=="undefined")V3D.load();},
+  t3d:()=>{v3dOff=!v3dOff;LS.set("z3doff",v3dOff?"1":"0");if(v3dOff&&typeof V3D!=="undefined")V3D.detach();render();},
   mute:()=>{muted=!muted;LS.set("zmute",muted?"1":"0");if(!muted){unlock();sfx("coin");}render();},
   "pop-x":()=>nextPop(),
   "pop-card":v=>{nextPop();openSheet({t:"f",k:v,x:{}});},

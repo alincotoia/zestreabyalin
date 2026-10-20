@@ -275,6 +275,16 @@ body.quake #app{animation:quake .5s ease-in-out}
 .hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .hist li{background:var(--ground);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
 .hh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+/* 3D table */
+.v3dslot{height:min(46vh,380px);border-radius:16px;overflow:hidden;position:relative;background:#1a0e18;box-shadow:inset 0 0 0 1px var(--line)}
+.v3dslot.loading::after{content:"Se așază masa…";position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:700}
+.v3d{position:absolute;inset:0}
+.v3d canvas{width:100%!important;height:100%!important;display:block}
+.v3dhint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);border:0;border-radius:20px;padding:6px 12px;background:rgba(34,19,31,.8);color:var(--ink);font:600 .78rem var(--body);pointer-events:none;animation:floatUp 4s ease-out both}
+.v3dtog{border:0;background:var(--surface);height:38px;padding:0 10px;border-radius:10px;font-weight:800;color:var(--muted);cursor:pointer}
+.v3dtog.on{background:var(--verdigris);color:#10261f}
+.modepick{display:flex;flex-direction:column;gap:6px}
 @media (max-width:380px){.grid3{grid-template-columns:1fr 1fr}.stats b{font-size:1.15rem}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>

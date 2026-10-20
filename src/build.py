@@ -5,6 +5,7 @@ VER = sys.argv[1] if len(sys.argv) > 1 else '1'
 
 head = (SRC/'head.html').read_text()
 engine = (SRC/'engine.js').read_text()
+view3d = (SRC/'view3d.js').read_text()
 ui = (SRC/'ui.js').read_text()
 shim = pathlib.Path('/home/claude/zestrea-app/src/fb-shim.js').read_text()
 
@@ -43,6 +44,7 @@ page = f'''<!doctype html>
 <script src="config.js"></script>
 <script>{shim}</script>
 <script>{engine}</script>
+<script>{view3d}</script>
 <script>{ui}
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{{}});</script>
 </body></html>'''
