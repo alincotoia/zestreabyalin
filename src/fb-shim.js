@@ -40,6 +40,7 @@
             tx.set(ref,{holder,exp:now+ttlMs});return{acquired:true};
           });}catch(e){return{acquired:false};}
         },
+        async release(holder){try{await fs.runTransaction(async tx=>{const s=await tx.get(ref);if(s.exists&&s.data().holder===holder)tx.set(ref,{holder:"",exp:0});});}catch(e){}},
         onSnapshot(next,error){return ref.onSnapshot(sn=>next(wrapSnap(sn)),e=>error&&error(err(e)));},
         collection(sub){return coll(path+"/"+sub);}
       };

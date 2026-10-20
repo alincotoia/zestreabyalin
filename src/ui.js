@@ -252,12 +252,12 @@ function openGame(c,silent){
 function closeGame(){if(typeof V3D!=="undefined"){V3D.detach();V3D.reset();}if(unsubG)unsubG();unsubG=null;if(unsubC)unsubC();unsubC=null;chatOpen=false;code=null;S=null;LS.set("zcode",null);view="lobby";render();}
 const gref=()=>db.doc("games/"+code);
 
-async function act(fn,silent){
+async function act(fn,silent){let lock=null,holder=null,got=false;
   if(busy)return;busy=true;document.body.classList.add("busy");
   try{
-    const lock=db.doc("locks/"+code);let got=false;
+    lock=db.doc("locks/"+code);
     for(let i=0;i<20&&!got;i++){
-      const r=await lock.acquire({holder:ME+"-"+Math.random().toString(36).slice(2,7),ttlMs:1500});
+      holder=ME+"-"+Math.random().toString(36).slice(2,7);const r=await lock.acquire({holder,ttlMs:1000});
       got=r.acquired;if(!got)await sleep(250+Math.random()*350);
     }
     if(!got){if(silent)return false;throw E("Altcineva face o mutare chiar acum. Mai încearcă o dată.");}
@@ -272,7 +272,7 @@ async function act(fn,silent){
     else if(e.code==="invalid_argument")toast("Nu ai drept de scriere aici. Cere-i gazdei acces de Editor la pagină.");
     else{toast("Ceva n-a mers. Mai încearcă o dată.");console.error(e);}
     return false;
-  }finally{busy=false;document.body.classList.remove("busy");}
+  }finally{if(got&&lock&&lock.release)lock.release(holder).catch(()=>{});busy=false;document.body.classList.remove("busy");}
 }
 let toastT;
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,3800);}
